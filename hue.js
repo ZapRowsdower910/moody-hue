@@ -1,269 +1,174 @@
 var needle = require("needle");
 var fs = require("fs");
 var _ = require("underscore");
+var log4js = require("log4js");
+log4js.configure({
+  appenders: [
+    { type: "console" }
+  ],
+  replaceConsole: true,
+  levels : {
+	"Rest" : "DEBUG"
+  }
+});
+// Used to deep merge configs
+var deepExt = require("underscore-deep-extend");
+// Wire deepExtend function
+_.mixin({deepExtend: deepExt(_)});
 var sun = require("suncalc");
+var when = require("when");
 
-var nameTrigger = "accent";
-var accentTimer = ((1000 * 60) * 5 ) // 5 minutes
-var longitude = -81.3977210;
-var latitude = 41.6986320;
+// local deps
+var hue = require("./hue-api");
+var accents = require("./accents");
+var configs = require("./state");
+var server = require("./rest");
+var bedtime = require("./bedtime");
+var weather = require("./weather");
+var rooms = require("./rooms");
 
-var portalUrl = "http://www.meethue.com/api/nupnp";
-var ip = "";
-var apiName = "huey-moods"; //10-40 chars
-
-var configs;
+var logger = log4js.getLogger("Main");
 
 main = {
 	init : function(){
-		// load configuration file
-		configs = JSON.parse( fs.readFileSync('conf.js', encoding="utf-8"));
-		
-		needle.get(portalUrl, main.setupLocal);
-		
-		var times = sun.getTimes(new Date(), latitude, longitude);
-	},
-	setupLocal : function(err, rsp){
-		if(!err){
-			if((rsp != undefined && rsp.body.length) && (rsp.body[0].internalipaddress != undefined && rsp.body[0].internalipaddress != "")){
-				ip = rsp.body[0].internalipaddress;
-				console.info("Found local server ["+ip+"]");
-				
-				main.registerApp.checkStatus();
+		try{
 
-			} else {
-				console.error("unable to find your Hue local bridge. No can work.");
+			// load configuration file
+			fileConfigs = JSON.parse( fs.readFileSync('conf.js', encoding="utf-8"));
+		
+			var mergedConfigs = _.deepExtend(configs, fileConfigs);
+			configs = mergedConfigs;
+			//log4js.configure(
+			
+			// validate configs
+			if(configs.accents && configs.accents.enabled == true){
+				// TODO: validate timer value
+				
+				// Transition time must be lower than timer
+				var adjustedTime = configs.accents.timer / 100;
+				if(adjustedTime < configs.accents.transitionTime){
+					configs.accents.transitionTime = adjustedTime - 1000;
+					if(configs.accents.transitionTime <= 0){
+						configs.accents.transitionTime = 1;
+					}
+					logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
+					
+				}
 			}
-		} else {
-			main.requestError(err);
+			
+			main.registerApp.checkStatus();
+			
+			main.refreshTimes();
+		} catch(e){
+			logger.error("Error attempting to start app", e);
 		}
 	},
 	registerApp : {
 		checkStatus : function(){
-			console.log("Checking app authentication status..");
-			needle.get(ip + "/api/" + apiName, function(err, resp){
-				if(!err){
-					if(resp.body.lights){
-						console.log("Successful api call made! We're is good to go");
-						
-						if(configs.accents.enabled){
-							accents.init();
-						}
-						
-					} else {
-						if(resp.body[0].error.type == 1){
-							console.log("Application has not yet been authenticated with bridge - starting activaction flow");
-							main.registerApp.start();
-						} else {
-							main.apiError(rsp[0]);
-						}
-					}
+			logger.info("Checking app authentication status of user ["+configs.general.apiName+"]..");
+			hue.api.get("").then(function(resp){
+
+				if(resp.lights){
+					logger.info("Successful api call made! We're is good to go");
+					
+					main.startPlugins();
+					
 				} else {
-					main.requestError(err);
+					logger.info("cheese and rice!");
+					if(resp[0].error.type == 1){
+						logger.info("Application has not yet been authenticated with bridge - starting activaction flow");
+						main.registerApp.start();
+					} else {
+						logger.error("Not sure what we have here [",rsp,"]");
+					}
 				}
+			}).otherwise(function(err){
+				logger.error("Error while attempting to check app status[",err,"]");
 			});
 		},
 		start: function(){
-			if(apiName){
+			if(configs.general.apiName){
 				var data = {
 					devicetype : "nodejs app",
-					username : apiName
+					username : configs.general.apiName
 				};
-				needle.post(ip + "/api", data, {json : true}, main.registerApp.processResult);
+				needle.post(configs.hue.baseIp + "/api", data, {json : true}, main.registerApp.processResult);
 			} else {
-				console.log("Configuration field apiName is empty, please update config to include a valid apiName to register this app under");
+				logger.error("Configuration field apiName is empty, please update config to include a valid apiName to register this app under");
 			}
 		},
 		processResult : function(err,resp){
 			if(!err){
-				// console.log(resp);
+				// logger.info(resp);
 				if(resp.body){
 					var rsp = resp.body;
-					// console.log(rsp[0]);
+					// logger.info(rsp[0]);
 					if(!rsp[0].error){
-						console.log("New API user created successfully");
+						logger.info("New API user created successfully");
 					} else {
 						if(resp.body[0].error.type == 7){
-							console.error("Check your apiName configuration - this fields needs to be between 10-40 characters long.");
-							console.error("Unable to continue, exiting");
+							logger.error("Check your apiName configuration - this fields needs to be between 10-40 characters long.");
+							logger.error("Unable to continue, exiting");
 						} else if(resp.body[0].error.type == 101){
-							console.log("Ok, you have 30 seconds to click the button on your bridge to authenticate this app before the request expires. If 30 seconds elapses, re-run the program to send another registration request.");
+							logger.info("Ok, you have 30 seconds to click the button on your bridge to authenticate this app before the request expires. If 30 seconds elapses, re-run the program to send another registration request.");
 						} else {
-							main.apiError(resp.body[0]);
+							logger.error(resp.body[0]);
 						}						
 					}
 				} else {
-					console.log("invalid response back from api register request. Unable to complete app registeration");
+					logger.error("invalid response back from api register request. Unable to complete app registeration");
 				}
 			} else {
 				main.requestError(err);
 			}
 		}
 	},
-	requestError : function(err){
-		console.error("Api request resulted in an error", err);
+	configureGroups : function(){
+		hue.get("/groups", function(rsp){
+			var groupCount = 0;
+			var completedCount = 0;
+			_.each(rsp, function(v,i){
+				var group = _.find(configs.groups, function(g){
+					if(g.name == v.name){
+						groupCount++;
+						return g;
+					}
+				});
+				if(group != undefined){
+					group.id = i;
+					groups.setMembers(group, function(){
+						completedCount++;
+						logger.info(groupCount, completedCount);
+						if(groupCount == completedCount){
+							main.startPlugins();
+						}
+					});
+				}
+			});
+		});
 	},
-	apiError : function(err){
-		console.error("Api resulted  in an error response", err);
-		// General errors
-		if(err.type == 1){
-			console.log("The app has not been authenticated yet - have you finished the registration process?");
-		} else if(err.type == 2){
-			console.log("Bad request T_T");
-		} else if(err.type == 3){
-			console.log("This device doesn't exist - using correct id?");
-		} else if(err.type == 4){
-			console.log("That method type isn't valid for this rest path.");
-		} else if(err.type == 5){
-			console.log("Request type expected a body that was not sent - using correct rest path?");
-		} else if(err.type == 6){
-			console.log("Invalid request params included on the PUT request - check the API.");
-		} else if(err.type == 7){
-			console.log("Paramter is out of range, or of incorrect type - check the API");
-		} else if(err.type == 8){
-			console.log("Read only paramater - can't be edited T_T");
-		} else if(err.type == 901){
-			console.log("Great now you gone and broke the bridge! Bridge internal error T_T");
+	startPlugins : function(){
+		logger.info("Boot sequence completed. Starting up plugins");
+		try{
+
+			// weather.show.current();
 			
-			// specific errors for ceratin message types
-		} else if(err.type == 101){
-			console.log("Link button was not pressed in 30 seconds.");
-		} else if(err.type == 201){
-			console.log("Paramter not modifiable - is the device on?");
-		} else if(err.type == 301){
-			console.log("Groups appear to be full, please remove one to before adding another.");
-		} else if(err.type == 302){
-			console.log("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
+			accents.init();
+
+		} catch (e){
+			logger.error("Error while starting up plugins: ", e);
 		}
+	},
+	refreshTimes : function(){
+		var now = new Date();
+		configs.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
+		configs.state.times.rolloverTime = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
+	
+//		logger.info(configs.state.times);
+	},
+	updateMode : function(newState){
+		configs.state.current.mode
 	}
 };
-
-lights = {
-	state : {
-		isOn : function(lightId){
-			needle.get(ip + "/api/" + apiName + "/lights/" + lightId, function(err, resp){
-				if(!err){
-					var rsp = resp.body;
-					if(rsp.state){
-						console.log(rsp.state);
-						console.log("light is currently [" + (rsp.state.on ? "on" : "off") + "]");
-						return rsp.state.on;
-					} else {
-						main.apiError(rsp[0]);
-					}
-				} else {
-					main.requestError(err);
-					
-				}
-			});
-		},
-		change : function(lightId, stateChange, callback){
-			needle.put(ip + "/api/" + apiName + "/lights/" + lightId + "/state", stateChange, {json : true}, function(err, resp){
-				if(!err){
-					var rsp = resp.body;
-					console.log(rsp);
-					if(!rsp[0].error){
-						return rsp;
-					} else {
-						main.apiError(rsp[0]);
-					}
-				} else {
-					main.requestError(err);
-				}
-			});
-		}
-	},
-	turnOn : function(lightId, callback){
-	console.log("turning light [" +lightId+ "] on");
-		lights.state.change(lightId, {"on" : true}, callback);
-	},
-	turnOff : function(lightId, callback){
-		console.log("turning light [" +lightId+ "] off");
-		lights.state.change(lightId, {"on" : false}, callback);
-	},
-};
-
-groups = {
-	init : function(callback){
-		needle.get(ip + "/api/" +apiName + "/groups", function(err,resp){
-			if(!err){
-				var rsp = resp.body;
-				if(!rsp.error){
-					if(rsp.length == 0){
-						
-					}
-					
-				} else{
-					
-				}
-			} else {
-				main.requestError(err);
-			}
-		});
-	},
-	add : function(name){}
-};
-
-accents = {
-	init : function(){
-		accents.checkGroups();
-	},
-	checkGroups : function(){
-		needle.get(ip + "/api/" + apiName + "/groups", function(err, resp){
-			if(!err){
-				var rsp = resp.body;
-				if(!rsp[0]){
-					console.log(rsp);
-					// Build a list of unique groups we need
-					var uniqueGroups = [];
-					_.each(configs.accents.profiles, function(profile){
-						if(uniqueGroups.indexOf(profile.group) < 0){
-							uniqueGroups.push(profile.group);
-						}
-					});
-					console.log("Unique groups:",uniqueGroups);
-					
-					var profileGroups = [];
-					// Find which groups we need to add
-					_.each(_.values(rsp), function(v,k){
-						if(_.contains(uniqueGroups, v.name)){
-							profileGroups.push(v.name);	
-						}
-					});
-					console.log("profileGroups:", profileGroups);
-					var neededGroups = _.difference(uniqueGroups, profileGroups);
-					console.log("neededGroups:", neededGroups);
-					if(neededGroups.length){
-						_.each(neededGroups, function(v,i){
-							console.log(v,i);
-							_.each(_.values(configs.groups), function(j,k){
-								console.log(k,j);
-							});
-						});
-					}
-				} else {
-					main.apiError(rsp[0]);
-				}
-			} else {
-				main.requestError(err);
-			}
-		});
-	},
-	addGroup : function(name,lights){
-		if(_.isArray(lights)){
-			needle.post(ip+ "/api/" + apiName + "/groups", {"name" : name, "lights" : lights}, function(err, resp){
-				if(!err){
-					var rsp = resp.body;
-					console.log(rsp);
-					
-				} else {
-					main.requestError(err);
-				}
-			});
-		} else {
-			console.error("an array of lights is needed to create a group");
-		}
-	}
-};
-
+// Startup processing core
 main.init();
