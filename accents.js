@@ -9,6 +9,7 @@ var logger = log4js.getLogger("Accents");
 var configs = require("./state");
 var hue = require("./hue-api");
 var server = require("./rest");
+var utils = require("./utils");
 
 var timers = {};
 
@@ -20,7 +21,37 @@ methods = {
 
 		if(configs.accents.enabled){
 			try{
+				configs.state.accents = {};
+				configs.state.current.accents = {};
+
+				// convert minutes to seconds
+				configs.accents.timer = utils.convertMinToMilli(configs.accents.timer);
+				logger.debug("Timer converted to millis ["+configs.accents.timer+"]");
+
+				configs.accents.transitionTime = utils.convertMinToTransitionTime(configs.accents.transitionTime);
+				logger.debug("Accents transition timer converted to ["+configs.accents.transitionTime+"]");
+
+				// // Transition time must be lower than timer
+				// var adjustedTime = configs.accents.timer / 100;
+				// if(adjustedTime < configs.accents.transitionTime){
+				// 	configs.accents.transitionTime = adjustedTime - 1000;
+				// 	if(configs.accents.transitionTime <= 0){
+				// 		configs.accents.transitionTime = 1;
+				// 	}
+				// 	logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
+					
+				// }
+
 				methods.checkGroups();
+
+				// Find the default room
+				configs.state.accents.defaultRoom = _.find(configs.rooms.definitions, function(v){
+					return v.name == configs.accents.defaultRoom;
+				});
+
+				logger.info("Default room set to ["+configs.state.accents.defaultRoom.name+"]");;
+				configs.state.current.accents.room =configs.state.accents.defaultRoom;
+
 			} catch (e){
 				logger.error("Exception while attempting to start Accents", e);
 			}
@@ -106,28 +137,30 @@ methods = {
 	},
 	startChange : function(){
 		try{
-			if(configs.state.current.mode == "accents"){
-				// logger.info(state.times);
+			if(configs.state.current.mode == "accents" || configs.state.current.mode == "home"){
+
 				var now = new Date();
-				if(now < configs.state.times.sunriseEnd || now > configs.state.times.sunsetStart){
+				if((configs.accents.waitForDark && now < configs.state.times.sunriseEnd )
+					|| (configs.accents.waitForDark && now > configs.state.times.sunsetStart)
+					|| !configs.accents.waitForDark)
+				{
 					logger.info("Looks like its dark enought for Accents mode. Starting accent cycle.");
 					if(configs.state.times.rolloverTime < now){
 						main.refreshTimes();
 					}
 					
 					var nextProfile = methods.getNextProfile();
-					var currentProfile = accents.getCurrentProfile();
+					var currentProfile = methods.getCurrentProfile();
 
 					methods.changeProfile(currentProfile, nextProfile);
 
 				} else {
-					
 					logger.debug("Not dark enough for accents. Accents will start at ["+configs.state.times.sunsetStart+"]");
 				}
 			} else {
-				logger.info("Invalid state of ["+state.current.mode+"] unable to start accents");
+				logger.info("Invalid state of ["+configs.state.current.mode+"] unable to start accents");
 			}
-		} catch (e){
+		} catch(e){
 			logger.error("error while attempting to change accents", e);
 		}
 	},
@@ -158,57 +191,103 @@ methods = {
 	},
 	syncLights : function(currentProfile, nextProfile, change){
 		var actionList = [];
-		if(currentProfile != undefined){
-			// first turn off any ligths that are not needed anymore
-			logger.info("current light set [" + currentProfile.lights + "] next light set [" + nextProfile.lights + "]");
-			var oldLights = _.difference(currentProfile.lights,nextProfile.lights);
-			if(oldLights.length){
-				logger.info("Light Ids that need to be turned off [" + oldLights  + "]");
-				_.each(oldLights, function(v){
-					// if(hue.lights.state.isOn(v).then(function(){
-						logger.info("dimming light ["+v+"]");
-						var dimmer = delay((configs.accents.transitionTime * 100), hue.lights.state.change(v, {"bri":0,"transitiontime":configs.accents.transitionTime})).then(
-							function(){
-								actionList.push(hue.lights.turnOff(v));
-							}
-						).otherwise(function(){
-							logger.info("Delayed dimming call failed for light ["+v+"]");
-						});
-						actionList.push(dimmer);
-					// });
-				});
-			}
 
-		} // implied else - most likely first run
-		
-		// then turn on any that are not on in our next profile
-		_.each(nextProfile.lights, function(v){
-			var get = hue.lights.state.get(v).then(function(rsp){
-				if(!rsp.state.on){
-					logger.info("turning light [" + v + "] on and to dimmest setting");
-					var turnOn = hue.lights.state.change(v,{"on":true,"bri":0}).then(function(){
-						logger.info("light [" + v  +"] has started brightening stage");
-						var brighten = delay((configs.accents.transitionTime * 100), hue.lights.state.change(v,{"bri":configs.accents.bri,"transitiontime":configs.accents.transitionTime})).then(function(){
-								logger.info("light [" + v  +"] has started profile change stage");
-								hue.lights.state.change(v,change);
-							}
-						);
-						
-						actionList.push(brighten);
-					}).otherwise(function(){
-						logger.info("Failed to turn on ligh ["+v+"]");
-					});;
-					actionList.push(turnOn);
-				} else {
-					logger.info("light ["+v+"] is already on, activating profile change");
-					actionList.push(hue.lights.state.change(v, change));
+		var nextProfileLights = _.clone(nextProfile.lights);
+		var briLight = -1;
+		// Turn on one light from the room for light
+		var lightsNotInUse = _.difference(configs.state.current.accents.room.lights, nextProfile.lights);
+		logger.info("Lights in room not being used by current active profile ["+lightsNotInUse+"]");
+		if(lightsNotInUse.length){
+			logger.debug("Total number of lights to choose from ["+lightsNotInUse.length+"]");
+			// TODO: pick a random index
+			// briLightIndex = Math.floor(Math.random() * lightsNotInUse.length) + 1;
+			briLightIndex = Math.floor(Math.random() * (lightsNotInUse.length - 0));
+			logger.debug("briLightIndex generated ["+briLightIndex+"]");
+			briLight = lightsNotInUse[briLightIndex];
+			logger.info("Random light ["+briLight+"] selected for bright light");
+			nextProfileLights.push(briLight);
+		}
+
+		// Turn off lights that are no longer needed
+		// if(currentProfile != undefined){
+			var roomLights = configs.state.current.accents.room.lights;
+			console.log("The current rooms light configuration ["+roomLights+"]");
+			var onList = [];
+			var dfdList = []
+			_.each(roomLights, function(lightId){
+				var promise = hue.lights.state.isOn(lightId).then(function(isOn){
+					if(isOn){
+						onList.push(lightId);
+					}
+				});
+				dfdList.push(promise);
+			});
+
+			when.all(dfdList).then(function(){
+				// first turn off any ligths that are not needed anymore
+				logger.info("current light set [" + onList + "] next light set [" + nextProfileLights + "]");
+				var oldLights = _.difference(onList,nextProfileLights);
+				if(oldLights.length){
+					logger.info("Light Ids that need to be turned off [" + oldLights  + "]");
+					_.each(oldLights, function(v){
+						// if(hue.lights.state.isOn(v).then(function(){
+							logger.info("dimming light ["+v+"]");
+							var dimmer = delay((configs.accents.transitionTime * 100), hue.lights.state.change(v, {"bri":0,"transitiontime":configs.accents.transitionTime})).then(
+								function(){
+									actionList.push(hue.lights.turnOff(v));
+								}
+							).otherwise(function(){
+								logger.info("Delayed dimming call failed for light ["+v+"]");
+							});
+							actionList.push(dimmer);
+						// });
+					});
 				}
 			});
-			actionList.push(get);
+
+		// } // implied else - most likely first run
+
+		
+		// then turn on any that are not on in our next profile
+		_.each(nextProfileLights, function(lightId){
+			
+			// Clone the change object to prevent changing the profile setting
+			var thisChange = _.clone(change);
+			// The bright light needs to cast light into the room, so to ensure
+			// this light is going to generate light we want to overwrite the brightness
+			if(lightId == briLight){
+				thisChange.sat = 50;
+			} 
+
+			logger.debug("light ["+lightId+"] profile change ["+JSON.stringify(change)+"] thisChange ["+JSON.stringify(thisChange)+"]");
+			actionList.push(methods.turnOnLight(lightId, thisChange, actionList))
 		});
 		
 		logger.info("waiting for ["+actionList.length+"] actions to complete before profile is considered changed");
 		return when.all(actionList);
+	},
+	turnOnLight : function(lightId, change, actionList){
+		return hue.lights.state.get(lightId).then(function(rsp){
+			if(!rsp.state.on){
+				logger.info("turning light [" + lightId + "] on and to dimmest setting");
+				var turnOn = hue.lights.state.change(lightId,{"on":true,"bri":0}).then(function(){
+					logger.info("light [" + lightId  +"] has started brightening stage");
+					var brighten = delay((configs.accents.transitionTime * 100), hue.lights.state.change(lightId,{"bri":configs.accents.bri,"transitiontime":configs.accents.transitionTime})).then(function(){
+							logger.info("light [" + lightId  +"] has started profile change stage");
+							hue.lights.state.change(lightId,change);
+						}
+					);
+					
+					actionList.push(brighten);
+				}).otherwise(function(){
+					logger.info("Failed to turn on ligh ["+lightId+"]");
+				});;
+				actionList.push(turnOn);
+			} else {
+				logger.info("light ["+lightId+"] is already on, activating profile change");
+				actionList.push(hue.lights.state.change(lightId, change));
+			}
+		});
 	},
 	getNextProfile : function(){
 		if(configs.state.current.profile == 'none'){
@@ -216,7 +295,7 @@ methods = {
 		} else {
 			// find next in line
 			logger.info("looking for next profile. current profile [" + configs.state.current.profile + "]");
-			var group = accents.getCurrentProfile();
+			var group = methods.getCurrentProfile();
 			// If group wasn't found in available profiles, default to first available
 			if(group == undefined){
 				return data.mergedProfiles[0];
@@ -250,6 +329,7 @@ server.put({path:"/accents/start", version : "1"}, function(req, resp, next){
 	
 	if(configs.state.current.mode != "accents"){
 		methods.start();
+		resp.status(200);
 	} else {
 		logger.info("You're already IN accents mode silly..");
 	}

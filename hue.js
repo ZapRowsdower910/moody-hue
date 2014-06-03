@@ -23,11 +23,13 @@ var hue = require("./hue-api");
 var accents = require("./accents");
 var configs = require("./state");
 var server = require("./rest");
-var bedtime = require("./bedtime");
-var weather = require("./weather");
+// var bedtime = require("./bedtime");
+// var weather = require("./weather");
 var rooms = require("./rooms");
 
 var logger = log4js.getLogger("Main");
+
+console.log(server);
 
 main = {
 	init : function(){
@@ -39,22 +41,15 @@ main = {
 			var mergedConfigs = _.deepExtend(configs, fileConfigs);
 			configs = mergedConfigs;
 			//log4js.configure(
-			
-			// validate configs
-			if(configs.accents && configs.accents.enabled == true){
-				// TODO: validate timer value
-				
-				// Transition time must be lower than timer
-				var adjustedTime = configs.accents.timer / 100;
-				if(adjustedTime < configs.accents.transitionTime){
-					configs.accents.transitionTime = adjustedTime - 1000;
-					if(configs.accents.transitionTime <= 0){
-						configs.accents.transitionTime = 1;
-					}
-					logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
-					
-				}
-			}
+
+ 			// Start rest server
+			server.listen(configs.server.port, configs.server.ip_addr, function(){
+				logger.info("====================================================");
+				logger.info("=========== [ Starting up REST service ] ===========");
+			    logger.info("=========== [ App %s           ] ===========", server.name);
+				logger.info("=========== [ listening at %s ] ======", server.url );
+				logger.info("====================================================");
+			});
 			
 			main.registerApp.checkStatus();
 			
@@ -168,6 +163,14 @@ main = {
 	},
 	updateMode : function(newState){
 		configs.state.current.mode
+	},
+	isDarkOut : function(){
+		var now = new Date();
+		if(now < configs.state.times.sunriseEnd){
+			return true;
+		}
+
+		return false;
 	}
 };
 // Startup processing core

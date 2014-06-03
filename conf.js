@@ -6,8 +6,6 @@
 	},
 	"accents" : {
 		"enabled" : true,
-		"timer" : 1800000 ,
-		"transitionTime":300000,
 		"bri": 200,
 		"profiles" : [
 			{	

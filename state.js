@@ -10,6 +10,32 @@ module.exports = {
 		portalUrl : "http://www.meethue.com/api/nupnp",
 		baseIp : ""
 	},
+	profiles : [
+		{	
+			"name" : "heavy green",
+			"hue" : 25500,
+			"sat" : 255,
+			"group":"accent a"
+		},
+		{	
+			"name" : "heavy blue",
+			"hue" : 46920,
+			"sat" : 255,
+			"group":"accent b"
+		},
+		{	
+			"name" : "heavy yellow",
+			"hue" : 12750,
+			"sat" : 255,
+			"group":"accent c"
+		},
+		{	
+			"name" : "heavy pink",
+			"hue" : 56100,
+			"sat" : 255,
+			"group":"accent d"
+		}
+	],
 	weather : {
 		lights : [
 			"2"
@@ -112,8 +138,9 @@ module.exports = {
 	},
 	accents : {
 		enabled : false,
-		timer : 1800000 ,	// 30 mins
-		transitionTime:300000,	// 5 mins
+		waitForDark : false,
+		timer : 5,	// mins
+		transitionTime: 1,	// mins
 		profiles : [
 			{	
 				name : "heavy green",
@@ -127,7 +154,8 @@ module.exports = {
 				sat : 255,
 				group:"accent b"
 			}
-		]
+		],
+		defaultRoom : "Living Room"
 	},
 	groups : [
 		{
@@ -158,11 +186,46 @@ module.exports = {
 			1,
 			3
 		],
-		home : {
+		homeState : {
 			hue : 12000,
 			sat : 50,
 			bri : 230
-		}
+		},
+		homeLights : [
+			1,
+			2,	
+			3,
+			4,
+			5
+		],
+		status : {
+			light : 5,
+			colors : {
+				welcome : 25500,
+				pending : 12750,
+				goodbye : 0,
+				unknown : 46920
+			}
+		},
+		definitions : [
+			{
+				name : "Living Room",
+				lights : [
+					1,
+					2,
+					3,
+					4,
+					5
+				]
+			},
+			{
+				name : "Bedroom",
+				lights : [
+					6
+				]
+			}
+		]
+
 	},
 	state : {
 		current : {

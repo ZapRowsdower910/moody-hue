@@ -115,6 +115,17 @@ var lights = {
 				return utils.processArrayResp(rsp);
 			});
 		},
+		changeSet : function(lightArray, stateChange){
+			if(_.isEmpty(stateChange)){
+				throw "A change is required.";
+			}
+			var lightPromises = [];
+			_.each(lightArray, function(lightId){
+				var promise = lights.state.change(lightId, stateChange);
+				lightPromises.push(promise);
+			});
+			return lightPromises;
+		},
 		get : function(lightId){
 			return api.get("/lights/" + lightId);
 		}
@@ -126,6 +137,26 @@ var lights = {
 	turnOff : function(lightId){
 		logger.info("turning light [" +lightId+ "] off");
 		return lights.state.change(lightId, {"on" : false});
+	},
+	blink : function(lightId, change, interval){
+		logger.info("Blinking light ["+lightId+"]");
+
+		var limit = 0;
+		var blinkTimer = setInterval(function(){
+			
+			if(limit < 10){
+
+				lights.state.isOn(lightId).then(function(isOn){
+					change.on = !isOn;
+					lights.state.change(lightId, change);
+				});
+
+				limit++;	
+			} else {
+				clearInterval(blinkTimer);
+			}
+
+		}, interval);
 	}
 };
 

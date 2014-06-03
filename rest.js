@@ -1,4 +1,5 @@
 var restify = require("restify");
+var io = require("socket.io")(restify);
 var configs = require("./state"); 
 var log4js = require("log4js");
 var logger = log4js.getLogger("Rest");
@@ -11,8 +12,12 @@ server.pre(restify.pre.sanitizePath());
 
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
-server.use(restify.CORS());
 
+// server.accepts("application/json");
+
+/****
+* Change the active mode
+****/
 server.put({path:'/change/mode/:newmode', version: '1'} ,function(req, resp, next){
 	var newMode = req.params.newmode;
 	logger.info("change mode request received. Changing mode to ["+newMode+"]");
@@ -20,13 +25,21 @@ server.put({path:'/change/mode/:newmode', version: '1'} ,function(req, resp, nex
 	return next();
 });
 
-// Start rest server
-server.listen(configs.server.port, configs.server.ip_addr, function(){
-	logger.info("====================================================");
-	logger.info("=========== [ Starting up REST service ] ===========");
-    logger.info("=========== [ App %s           ] ===========", server.name);
-	logger.info("=========== [ listening at %s ] ======", server.url );
-	logger.info("====================================================");
+/**
+* Returns the current status as a JSON payload
+**/
+server.get({path:'/current/mode'}, function(req, resp, next){
+	logger.info("Request for /current/mode");
+
+	try{
+		resp.setHeader('Content-Type', 'application/json');
+		resp.send(200, {"mode" : configs.state.current.mode});
+	}catch(e){
+		logger.error("Error while processing request: ", e);
+		resp.send(500);
+	}
+
+	return next();
 });
 
 module.exports = server;
