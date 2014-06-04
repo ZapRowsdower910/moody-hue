@@ -6,6 +6,7 @@ var logger = log4js.getLogger("Rooms");
 var hue = require("./hue-api");
 var server = require("./rest");
 var configs = require("./state");
+var bedroom = require("./bedtime");
 
 
 var timers = {};

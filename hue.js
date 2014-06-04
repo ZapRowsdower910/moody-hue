@@ -51,6 +51,8 @@ main = {
 				logger.info("====================================================");
 			});
 			
+			configs.state.timers = {};
+
 			main.registerApp.checkStatus();
 			
 			main.refreshTimes();
