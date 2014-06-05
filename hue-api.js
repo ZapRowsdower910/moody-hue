@@ -238,6 +238,8 @@ var utils = {
 			logger.error("Groups appear to be full, please remove one to before adding another.");
 		} else if(err.type == 302){
 			logger.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
+		} else {
+			logger.error("unregonized error type.");
 		}
 	},
 	processArrayResp : function(rsp,dfd){

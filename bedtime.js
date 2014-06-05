@@ -45,6 +45,14 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			}
 		});
 		
+
+		// TODO: we a way to either reject all defereds to the hue-api or
+		// to wrap the api in better error state handling...
+		// Exception is thrown when light is turned off during a profile change 
+		// that has 2 steps (turn on, brighten, change profile). This exception
+		// can be prevented by always first querying the light bulb state before 
+		// attempting to change it. However there should be a API exception thrown
+		// to indicate bad state, which isn't being caught anywhere for some reason.
 		if(bedtimeGroup){
 			
 			// Get all lights
