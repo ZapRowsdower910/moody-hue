@@ -29,8 +29,6 @@ var methods = {
 		turnOn : function(lights){
 			logger.info("preparing to turn on room. room configs ["+configs.rooms+"]");
 
-			configs.state.current.mode = "home";
-
 			// Cycle through lights and check to see if they're already on.
 			// If they are on already, we don't want to override their current
 			// display settings. This can allow someone to login - and get more
@@ -47,6 +45,9 @@ var methods = {
 						var lightRsp = hue.lights.state.change(lightId, change);
 						lightPromises.push(lightRsp);
 					}
+				},
+				function(err){
+					logger.error("Error while attempting to check if light [" + lightId + "] is on [%s]", err);
 				});
 			});
 
@@ -58,9 +59,7 @@ var methods = {
 			
 		},
 		turnOff : function(lights){
-			logger.info("turning off room, using lights ["+lights+"]");
-
-			configs.state.current.mode = "notHome";
+			logger.info("turning off room, using lights ["+lights+"]");			
 
 			var change = {on:false};
 			var lightRsp = hue.lights.state.changeSet(lights,change);
@@ -105,6 +104,7 @@ var methods = {
 
 		if(state == "in"){
 			logger.info("Log in request detected.");
+			configs.state.current.mode = "home";
 
 			if(methods.checkTime()){
 				methods.roomControl.turnOn(configs.rooms.homeLights);
@@ -122,8 +122,10 @@ var methods = {
 			}
 
 
-		} else if(state == "out"){
+		} else if(state == "out"){			
 			logger.info("Goodbye! I'll just shut off lights for ya..")
+			configs.state.current.mode = "notHome";
+
 			methods.roomControl.turnOff(configs.rooms.homeLights);
 
 			// Display command status

@@ -273,8 +273,14 @@ methods = {
 				var turnOn = hue.lights.state.change(lightId,{"on":true,"bri":0}).then(function(){
 					logger.info("light [" + lightId  +"] has started brightening stage");
 					var brighten = delay((configs.accents.transitionTime * 100), hue.lights.state.change(lightId,{"bri":configs.accents.bri,"transitiontime":configs.accents.transitionTime})).then(function(){
-							logger.info("light [" + lightId  +"] has started profile change stage");
-							hue.lights.state.change(lightId,change);
+							hue.lights.state.isOn(lightId).then(function(isOn){
+								if(isOn){
+									logger.info("light [" + lightId  +"] has started profile change stage");
+									hue.lights.state.change(lightId,change);
+								} else {
+									logger.info("light [" + lightId + "] has been turned off. Accents will assume its off for a reason..")
+								}
+							});
 						}
 					);
 					

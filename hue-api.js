@@ -139,24 +139,41 @@ var lights = {
 		return lights.state.change(lightId, {"on" : false});
 	},
 	blink : function(lightId, change, interval){
-		logger.info("Blinking light ["+lightId+"]");
+		var dfd = when.defer();
 
-		var limit = 0;
-		var blinkTimer = setInterval(function(){
+		lights.state.get(lightId).then(function(currentState){
+			logger.info("Blinking light ["+lightId+"]");
+			var blinkIterations = 10;
+
+			var originalState = _.clone(currentState);
 			
-			if(limit < 10){
+			var limit = 0;
+			var blinkTimer = setInterval(function(){
+				
+				if(limit < 10){
 
-				lights.state.isOn(lightId).then(function(isOn){
-					change.on = !isOn;
-					lights.state.change(lightId, change);
-				});
+					lights.state.isOn(lightId).then(function(isOn){
+						change.on = !isOn;
+						lights.state.change(lightId, change);
+					});
 
-				limit++;	
-			} else {
-				clearInterval(blinkTimer);
-			}
+					limit++;	
+				} else {
+					clearInterval(blinkTimer);
+					lights.state.change(lightId, originalState).then(function(){
+						logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
+					});
 
-		}, interval);
+					dfd.resolve();
+				}
+
+			}, interval);
+		}, function(err){
+			logger.warn("Unable to get light ["+lightId+"] current settings to start blink phase.");
+			dfd.reject();
+		});
+
+		return dfd.promise;
 	}
 };
 
