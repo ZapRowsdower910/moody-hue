@@ -139,7 +139,7 @@ module.exports = {
 	accents : {
 		enabled : false,
 		waitForDark : false,
-		timer : 5,	// mins
+		timer : 2,	// mins
 		transitionTime: 1,	// mins
 		profiles : [
 			{	
