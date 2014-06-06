@@ -1,3 +1,11 @@
+/***
+**	Accents Plugin - cycle through different light profiles
+**		- modes
+** 			- accents - Accents mode will cycle a room through different color profiles.
+**			- accents-bright - 
+**			- accents-
+****/
+
 var _ = require("underscore");
 var when = require("when");
 var delay = require("when/delay");
@@ -10,6 +18,16 @@ var configs = require("./state");
 var hue = require("./hue-api");
 var server = require("./rest");
 var utils = require("./utils");
+
+var validModes = [
+	"accents",
+	"accents-bright",
+	"home"
+];
+
+var validBrightLights = [
+	"Extended color light"
+];
 
 var timers = {};
 
@@ -110,7 +128,7 @@ methods = {
 	start : function(){
 		logger.info("Enabling Accent mode");
 		// lock in our mode
-		configs.state.current.mode = "accents";	
+		configs.state.current.mode = "accents-bright";	
 		
 		// Start change immedately
 		methods.startChange();
@@ -137,7 +155,7 @@ methods = {
 	},
 	startChange : function(){
 		try{
-			if(configs.state.current.mode == "accents" || configs.state.current.mode == "home"){
+			if(validModes.indexOf(configs.state.current.mode) > 0){
 
 				var now = new Date();
 				if((configs.accents.waitForDark && now < configs.state.times.sunriseEnd )
@@ -201,7 +219,7 @@ methods = {
 			logger.debug("Total number of lights to choose from ["+lightsNotInUse.length+"]");
 			// TODO: pick a random index
 			// briLightIndex = Math.floor(Math.random() * lightsNotInUse.length) + 1;
-			briLightIndex = Math.floor(Math.random() * (lightsNotInUse.length - 0));
+			briLightIndex = methods.randomLight(lightsNotInUse);
 			logger.debug("briLightIndex generated ["+briLightIndex+"]");
 			briLight = lightsNotInUse[briLightIndex];
 			logger.info("Random light ["+briLight+"] selected for bright light");
@@ -325,6 +343,33 @@ methods = {
 				return profile;
 			}
 		});
+	},
+	randomLight : function(lightArray){
+		logger.info("lightArray ["+lightArray+"]");
+		var rnd = Math.floor(Math.random() * (lightArray.length));
+		logger.debug("Random candidate ["+rnd+"]");
+		// Accent-bright requires a certian brightness of bulb to make sure the room is
+		// still somewhat light
+		if(configs.state.current.mode = "accents-bright"){
+			hue.lights.state.get(lightArray[rnd]).then(function(state){
+				logger.debug("type of [",state.type,"]")
+				var validLight = validBrightLights.indexOf(state.type);
+				logger.debug("validLight ["+validLight+"]")
+				logger.debug("random light choice ["+lightArray[rnd]+"] [" + (validLight > -1 ? "is" : "isn't") + "] a valid light");
+				if(validLight > -1){
+					return lightArray[rnd];
+				} else {
+					lightArray.splice(rnd);
+					if(lightArray.length){
+						return methods.randomLight(lightArray);
+					} else {
+						return lightArray[rnd];
+					}
+				}
+			});
+		}
+
+		return rnd;
 	}
 };
 
