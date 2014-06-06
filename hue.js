@@ -23,8 +23,8 @@ var hue = require("./hue-api");
 var accents = require("./accents");
 var configs = require("./state");
 var server = require("./rest");
-// var bedtime = require("./bedtime");
-// var weather = require("./weather");
+var bedtime = require("./bedtime");
+var weather = require("./weather");
 var rooms = require("./rooms");
 
 var logger = log4js.getLogger("Main");
