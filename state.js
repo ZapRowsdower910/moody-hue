@@ -175,7 +175,7 @@ module.exports = {
 	],
 	server : {
 		port : 8080,
-		ip_addr : "192.168.1.9"
+		ip_addr : "192.168.1.7"
 	},
 	bedtime : {
 		end : 10,
