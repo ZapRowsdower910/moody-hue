@@ -4,7 +4,13 @@ var _ = require("underscore");
 var log4js = require("log4js");
 log4js.configure({
   appenders: [
-    { type: "console" }
+    { type: "console" },
+    {
+    	"type": "file",
+        "filename": "logs/log.file",
+        "maxLogSize": 20480,
+        "backups": 3
+    }
   ],
   replaceConsole: true,
   levels : {
@@ -29,8 +35,6 @@ var rooms = require("./rooms");
 var transitions = require("./transitions");
 
 var logger = log4js.getLogger("Main");
-
-console.log(server);
 
 main = {
 	init : function(){
