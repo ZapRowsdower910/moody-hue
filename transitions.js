@@ -85,7 +85,7 @@ var methods = {
 		_.each(room.lights,function(lightId){
 			hue.lights.state.isOn(lightId).then(function(isOn){
 				if(isOn == false){
-					var promise = hue.lights.turnOnDim(ligthId);
+					var promise = hue.lights.turnOnDim(lightId);
 					set.push(promise);
 				}
 			});
