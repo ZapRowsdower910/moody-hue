@@ -130,7 +130,7 @@ var lights = {
 			return api.get("/lights/" + lightId);
 		}
 	},
-	turnOnDim : function(){
+	turnOnDim : function(lightId){
 		logger.info("turning light [" +lightId+ "] on");
 		return lights.state.change(lightId, {"on" : true, bri : 1, sat: 20});
 	},
