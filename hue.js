@@ -26,6 +26,7 @@ var server = require("./rest");
 var bedtime = require("./bedtime");
 var weather = require("./weather");
 var rooms = require("./rooms");
+var transitions = require("./transitions");
 
 var logger = log4js.getLogger("Main");
 
@@ -151,6 +152,7 @@ main = {
 			// weather.show.current();
 			
 			accents.init();
+			transitions.actions.init();
 
 		} catch (e){
 			logger.error("Error while starting up plugins: ", e);

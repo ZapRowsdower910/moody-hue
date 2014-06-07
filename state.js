@@ -181,6 +181,20 @@ module.exports = {
 		end : 10,
 		watcherInterval : 30
 	},
+	transitions : {
+		transitionTime : .5,
+		interval : 1,	// mins
+		defaultRoom : 0,    // array index of rooms.definitions
+		brightness : {
+			dim : 150,
+			bright : 250
+		},
+		satLevels : {
+			light : [50, 175],
+			mid : [100, 255],
+			heavy : [215, 255]
+		}
+	},
 	rooms : {
 		lights : [
 			1,
@@ -229,7 +243,7 @@ module.exports = {
 	},
 	state : {
 		current : {
-			mode : "none",
+			mode : "transitions-mid",
 			profile : "none",
 			rolloverTime : undefined
 		}

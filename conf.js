@@ -2,10 +2,10 @@
 	"general" : {
 		"longitude" : -81.3977210,
 		"latitude" : 41.6986320,
-		"mode":"accent"
+		"mode":"transitions"
 	},
 	"accents" : {
-		"enabled" : true,
+		"enabled" : false,
 		"bri": 200,
 		"profiles" : [
 			{	
