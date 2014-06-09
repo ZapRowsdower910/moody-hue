@@ -11,26 +11,22 @@
 			{	
 				"name" : "heavy green",
 				"hue" : 25500,
-				"sat" : 255,
-				"group":"accent a"
+				"sat" : 255
 			},
 			{	
 				"name" : "heavy blue",
 				"hue" : 46920,
-				"sat" : 255,
-				"group":"accent b"
+				"sat" : 255
 			},
 			{	
 				"name" : "heavy yellow",
 				"hue" : 12750,
-				"sat" : 255,
-				"group":"accent c"
+				"sat" : 255
 			},
 			{	
 				"name" : "heavy pink",
 				"hue" : 56100,
-				"sat" : 255,
-				"group":"accent d"
+				"sat" : 255
 			}
 		]
 	},

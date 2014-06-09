@@ -14,10 +14,10 @@ var log4js = require("log4js");
 var logger = log4js.getLogger("Accents");
 
 // local deps
-var configs = require("./state");
-var hue = require("./hue-api");
-var server = require("./rest");
-var utils = require("./utils");
+var configs = require("../state");
+var hue = require("../hue-api");
+var server = require("../rest");
+var utils = require("../utils");
 
 var validModes = [
 	"accents",
@@ -34,47 +34,77 @@ var timers = {};
 var data = {};
 
 methods = {
-	init : function(){
-		logger.info("Attempting to startup Accents");
+	actions : {
+		init : function(){
+			logger.info("Attempting to startup Accents");
 
-		if(configs.accents.enabled){
-			try{
-				configs.state.accents = {};
-				configs.state.current.accents = {};
+			if(configs.accents.enabled){
+				try{
+					configs.state.accents = {};
+					configs.state.current.accents = {};
 
-				// convert minutes to seconds
-				configs.accents.timer = utils.convertMinToMilli(configs.accents.timer);
-				logger.debug("Timer converted to millis ["+configs.accents.timer+"]");
+					// convert minutes to seconds
+					configs.accents.timer = utils.convertMinToMilli(configs.accents.timer);
+					logger.debug("Timer converted to millis ["+configs.accents.timer+"]");
 
-				configs.accents.transitionTime = utils.convertMinToTransitionTime(configs.accents.transitionTime);
-				logger.debug("Accents transition timer converted to ["+configs.accents.transitionTime+"]");
+					configs.accents.transitionTime = utils.convertMinToTransitionTime(configs.accents.transitionTime);
+					logger.debug("Accents transition timer converted to ["+configs.accents.transitionTime+"]");
 
-				// // Transition time must be lower than timer
-				// var adjustedTime = configs.accents.timer / 100;
-				// if(adjustedTime < configs.accents.transitionTime){
-				// 	configs.accents.transitionTime = adjustedTime - 1000;
-				// 	if(configs.accents.transitionTime <= 0){
-				// 		configs.accents.transitionTime = 1;
-				// 	}
-				// 	logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
-					
-				// }
+					// // Transition time must be lower than timer
+					// var adjustedTime = configs.accents.timer / 100;
+					// if(adjustedTime < configs.accents.transitionTime){
+					// 	configs.accents.transitionTime = adjustedTime - 1000;
+					// 	if(configs.accents.transitionTime <= 0){
+					// 		configs.accents.transitionTime = 1;
+					// 	}
+					// 	logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
+						
+					// }
 
-				methods.checkGroups();
+					methods.checkGroups();
 
-				// Find the default room
-				configs.state.accents.defaultRoom = _.find(configs.rooms.definitions, function(v){
-					return v.name == configs.accents.defaultRoom;
-				});
+					// Find the default room
+					configs.state.accents.defaultRoom = _.find(configs.rooms.definitions, function(v){
+						return v.name == configs.accents.defaultRoom;
+					});
 
-				logger.info("Default room set to ["+configs.state.accents.defaultRoom.name+"]");;
-				configs.state.current.accents.room =configs.state.accents.defaultRoom;
+					logger.info("Default room set to ["+configs.state.accents.defaultRoom.name+"]");;
+					configs.state.current.accents.room =configs.state.accents.defaultRoom;
 
-			} catch (e){
-				logger.error("Exception while attempting to start Accents", e);
+				} catch (e){
+					logger.error("Exception while attempting to start Accents", e);
+				}
+			} else {
+				logger.info("Accents mode has been disabled");
 			}
-		} else {
-			logger.info("Accents mode has been disabled");
+		},
+		start : function(){
+			logger.info("Enabling Accent mode");
+			// lock in our mode
+			configs.state.current.mode = "accents-bright";	
+			
+			// Start change immedately
+			methods.startChange();
+			
+			if(timers.accents == null){
+				// if accents is running already, we should clear out the previous timer and restart it.
+				// This will ensure our fresh run wont change too early on the first cycle
+				clearInterval(timers.accents);
+			}
+			
+			// setup future changes
+			timers.accents = setInterval(function(){
+				methods.startChange();
+			},
+			configs.accents.timer);
+		},
+		stop : function(){
+			logger.info("Disabling Accent mode");
+			configs.state.current.mode = "none";
+			
+			clearTimer(timers.accents);
+			
+			return true;
 		}
 	},
 	checkGroups : function(){
@@ -118,40 +148,12 @@ methods = {
 				});
 			});
 			
-			methods.start();
+			methods.actions.start();
 			
 		}).otherwise(function(err){
 			// TODO: error handling
 			logger.info("check groups otherwise: ",err);
 		});
-	},
-	start : function(){
-		logger.info("Enabling Accent mode");
-		// lock in our mode
-		configs.state.current.mode = "accents-bright";	
-		
-		// Start change immedately
-		methods.startChange();
-		
-		if(timers.accents == null){
-			// if accents is running already, we should clear out the previous timer and restart it.
-			// This will ensure our fresh run wont change too early on the first cycle
-			clearInterval(timers.accents);
-		}
-		
-		// setup future changes
-		timers.accents = setInterval(function(){
-			methods.startChange();
-		},
-		configs.accents.timer);
-	},
-	stop : function(){
-		logger.info("Disabling Accent mode");
-		configs.state.current.mode = "none";
-		
-		clearTimer(timers.accents);
-		
-		return true;
 	},
 	startChange : function(){
 		try{

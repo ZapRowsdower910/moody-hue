@@ -79,6 +79,7 @@ var api = {
 				if((rsp != undefined && rsp.length) && (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != "")){
 					configs.hue.baseIp = rsp[0].internalipaddress;
 					logger.info("Found local server ["+configs.hue.baseIp+"]");
+					configs.state.current.scanningForBase = "completed";
 					
 					dfd.resolve();
 				} else {
@@ -94,8 +95,11 @@ var api = {
 	},
 	isSetup : function(){
 
-		if(configs.hue.baseIp == undefined || configs.hue.baseIp == ""){
+		if((configs.hue.baseIp == undefined || configs.hue.baseIp == "") 
+			|| (configs.state.current.scanningForBase == undefined || configs.state.current.scanningForBase != "completed"))
+		{
 			logger.info("Setting up hue API");
+			configs.state.current.scanningForBase = true;
 			return api.setup();
 		}
 		return true;

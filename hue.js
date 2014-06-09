@@ -2,6 +2,38 @@ var needle = require("needle");
 var fs = require("fs");
 var _ = require("underscore");
 var log4js = require("log4js");
+
+// Used to deep merge configs
+var deepExt = require("underscore-deep-extend");
+// Wire deepExtend function
+_.mixin({deepExtend: deepExt(_)});
+var sun = require("suncalc");
+var when = require("when");
+
+// local deps
+var hue = require("./hue-api");
+// var accents = require("./accents");
+var configs = require("./state");
+var server = require("./rest");
+var pluginManager = require("./pluginManager");
+// var bedtime = require("./bedtime");
+// var weather = require("./weather");
+var rooms = require("./rooms");
+// var transitions = require("./transitions");
+
+
+// console.log(configs.general.logging.fileAppender);
+// log4js.configure({
+//   appenders: [
+//     { type: "console" },
+//     configs.general.logging.fileAppender
+//   ],
+//   replaceConsole: true,
+//   levels : {
+// 	"Rest" : "DEBUG"
+//   }
+// });
+
 log4js.configure({
   appenders: [
     { type: "console" },
@@ -17,22 +49,6 @@ log4js.configure({
 	"Rest" : "DEBUG"
   }
 });
-// Used to deep merge configs
-var deepExt = require("underscore-deep-extend");
-// Wire deepExtend function
-_.mixin({deepExtend: deepExt(_)});
-var sun = require("suncalc");
-var when = require("when");
-
-// local deps
-var hue = require("./hue-api");
-var accents = require("./accents");
-var configs = require("./state");
-var server = require("./rest");
-var bedtime = require("./bedtime");
-var weather = require("./weather");
-var rooms = require("./rooms");
-var transitions = require("./transitions");
 
 var logger = log4js.getLogger("Main");
 
@@ -55,11 +71,16 @@ main = {
 				logger.info("=========== [ listening at %s ] ======", server.url );
 				logger.info("====================================================");
 			});
-			
-			configs.state.timers = {};
 
-			main.registerApp.checkStatus();
+			// Setup session objects
+			configs.state = {};
+			configs.state.timers = {};
+			configs.state.current = {};
+			configs.state.current.mode = "startup";
+
+			// main.registerApp.checkStatus();
 			
+			main.startPlugins();
 			main.refreshTimes();
 		} catch(e){
 			logger.error("Error attempting to start app", e);
@@ -155,8 +176,9 @@ main = {
 
 			// weather.show.current();
 			
-			accents.init();
-			transitions.actions.init();
+			// accents.init();
+			// transitions.actions.init();
+			pluginManager.init();
 
 		} catch (e){
 			logger.error("Error while starting up plugins: ", e);

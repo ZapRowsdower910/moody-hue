@@ -1,13 +1,27 @@
-var server = require("./rest");
-var configs = require("./state");
 var _ = require("underscore");
 
 // local deps
-var hue = require("./hue-api");
+var server = require("../rest");
+var configs = require("../state");
+var hue = require("../hue-api");
+var utils = require("../utils");
+var log4js = require("log4js");
+var logger = log4js.getLogger("Bedtime Plugin");
 
 var methods = {
+	actions : {
+		init : function(){
+
+		},
+		start : function(){
+
+		},
+		stop : function(){
+
+		}
+	},
 	bedtimeWatcher : function(startTime){
-		console.log("Starting up bedtime monitor:", startTime);
+		logger.info("Starting up bedtime monitor:", startTime);
 		configs.state.timers.bedtimeWatcher = setInterval(function(){
 			if(configs.state.current.mode == "bedtime"){
 				// get now
@@ -19,25 +33,24 @@ var methods = {
 				endTime.setDate(startTime.getDate() + 1);
 				
 				if(now > endTime){
-					console.log("Good Morning! Looks like bedtimes over");
+					logger.info("Good Morning! Looks like bedtimes over");
 					// remove mode control
 					configs.state.current.mode = "none";
 					// Clear timer
 					clearInterval(configs.state.timers.bedtimeWatcher);
 				}
 			} else {
-				console.log("Bedtime was canceled early? weak..");
+				logger.info("Bedtime was canceled early? weak..");
 				clearInterval(configs.state.timers.bedtimeWatcher);
 			}
 		},
-		(configs.bedtime.watcherInterval * 60000) // setting is in minutes
-		);
+		utils.convertMinToMilli(configs.bedtime.watcherInterval));
 	}
 };
 
 // Server end points
 server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next){
-	console.log("Received /bedtime request");
+	logger.info("Received /bedtime request");
 	try{
 		var bedtimeGroup = _.find(configs.groups, function(v){
 			if(v.name == "bedtime"){
@@ -58,7 +71,7 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			// Get all lights
 			hue.lights.state.get("").then(function(rsp){
 				_.each(rsp,function(v,i){
-					if(bedtimeGroup.lights.indexOf(i)){
+					if(bedtimeGroup.lights.indexOf(i) > -1){
 						hue.lights.turnOff(i);
 					} else {
 						hue.lights.turnOn(i);
@@ -70,13 +83,13 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			});
 			
 		} else {
-			console.error("no bedtime group set found. Add one to use this functionality!");
-			console.log(configs);
+			logger.error("no bedtime group set found. Add one to use this functionality!");
+			logger.debug(JSON.stringify(configs));
 		}
 		
 		resp.json(200);
 	} catch (e){
-		console.error("Error while attempting to go into bedtime mode: ", e);
+		logger.error("Error while attempting to go into bedtime mode: ", e);
 		resp.json(500);
 	}
 
@@ -84,7 +97,7 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 });
 
 server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
-	console.log("Received /bedtime request");
+	logger.info("Received /bedtime request");
 	try{
 		var bedtimeGroup = _.find(configs.groups, function(v){
 			if(v.name == "bedtime"){
@@ -93,22 +106,24 @@ server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
 		});
 		
 		if(bedtimeGroup){
-			console.log("enter sleep mode.");
+			logger.info("enter sleep mode.");
 			_.each(bedtimeGroup.lights, function(id){
 				hue.lights.turnOff(id);
 			});
 			
 			configs.state.current.mode = "sleep";
 		} else {
-			console.error("no bedtime group set found. Add one to use this functionality!");
-			console.log(configs);
+			logger.error("no bedtime group set found. Add one to use this functionality!");
+			logger.debug(JSON.stringify(configs));
 		}
 		
 		resp.json(200);
 	} catch (e){
-		console.error("Error while attempting to go into bedtime mode: ", e);
+		logger.error("Error while attempting to go into bedtime mode: ", e);
 		resp.json(500);
 	}
 
 	return next();
 });
+
+module.exports = methods;

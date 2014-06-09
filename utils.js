@@ -8,7 +8,7 @@ var methods = {
 		return ((mins * 60) * 10);
 	},
 	randomNumber : function(min,max){
-		return Math.floor(Math.random()*(max-(min+1))+(min+1));
+		return Math.floor(Math.random() * (max - (min + 1)) + (min + 1));
 	},
 	getModeLevel : function(current){
 		var parts = current.split("-");

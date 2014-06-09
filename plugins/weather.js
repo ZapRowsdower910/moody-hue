@@ -3,27 +3,29 @@ var _ = require("underscore");
 var Forecast = require("forecast");
 
 // lcocal deps
-var configs = require("./state");
-var server = require("./rest");
-var hue = require("./hue-api");
+var configs = require("../state");
+var server = require("../rest");
+var hue = require("../hue-api");
 
 var instance;
 var timers = {};
 
 
 var api = {
-	init : function(){
+	actions : {
+		init : function(){
 	
-		instance = new Forecast({
-			service : "forecast.io",
-			key : "df4d170ea01fc3a0cb9ab53d8cefd8b5",
-			units : "ferinheight",
-			cache : true,
-			ttl: {           
-			// How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
-			  minutes: 30
-			}
-		});
+			instance = new Forecast({
+				service : "forecast.io",
+				key : "df4d170ea01fc3a0cb9ab53d8cefd8b5",
+				units : "ferinheight",
+				cache : true,
+				ttl: {           
+				// How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
+				  minutes: 30
+				}
+			});
+		}
 	},
 	get : function(){
 		// make sure we have built an instance..

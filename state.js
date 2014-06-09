@@ -3,7 +3,12 @@ module.exports = {
 		apiName : "huey-moods",
 		logging : {
 			level : "DEBUG",
-			file : "log/logs"
+			fileAppender : {
+		    	"type": "file",
+		        "filename": "logs/log.file",
+		        "maxLogSize": 20480,
+		        "backups": 3
+		    }
 		}
 	},
 	hue : {
@@ -14,26 +19,22 @@ module.exports = {
 		{	
 			"name" : "heavy green",
 			"hue" : 25500,
-			"sat" : 255,
-			"group":"accent a"
+			"sat" : 255
 		},
 		{	
 			"name" : "heavy blue",
 			"hue" : 46920,
-			"sat" : 255,
-			"group":"accent b"
+			"sat" : 255
 		},
 		{	
 			"name" : "heavy yellow",
 			"hue" : 12750,
-			"sat" : 255,
-			"group":"accent c"
+			"sat" : 255
 		},
 		{	
 			"name" : "heavy pink",
 			"hue" : 56100,
-			"sat" : 255,
-			"group":"accent d"
+			"sat" : 255
 		}
 	],
 	weather : {
@@ -145,14 +146,12 @@ module.exports = {
 			{	
 				name : "heavy green",
 				hue : 25500,
-				sat : 255,
-				group:"accent a"
+				sat : 255
 			},
 			{	
 				name : "heavy blue",
 				hue : 46920,
-				sat : 255,
-				group:"accent b"
+				sat : 255
 			}
 		],
 		defaultRoom : "Living Room"
@@ -213,7 +212,7 @@ module.exports = {
 			5
 		],
 		status : {
-			light : 5,
+			light : 4,
 			colors : {
 				welcome : 25500,
 				pending : 12750,
