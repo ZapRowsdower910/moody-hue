@@ -103,6 +103,47 @@ var api = {
 			return api.setup();
 		}
 		return true;
+	},
+	registerUser : function(){
+		var dfd = when.defer();
+		
+		if(configs.general.apiName){
+			var data = {
+				devicetype : "moody-hues nodejs app",
+				username : configs.general.apiName
+			};
+			
+			logger.info("Attempting to register user ["+configs.general.apiName+"] to Hue bridge");
+			needle.post(configs.hue.baseIp + "/api", data, {json : true}, function(err,resp){
+				if(!err){
+					// logger.info(resp);
+					if(resp.body){
+						var rsp = resp.body;
+						// logger.info(rsp[0]);
+						if(!rsp[0].error){
+							logger.info("New API user created successfully");
+							dfd.resolve();
+						} else {
+							if(resp.body[0].error.type == 7){
+								dfd.reject("Check your apiName configuration - this fields needs to be between 10-40 characters long.");
+							} else if(resp.body[0].error.type == 101){
+								dfd.reject("Ok, you have 30 seconds to click the button on your bridge to authenticate this app before the request expires. If 30 seconds elapses, re-run the program to send another registration request.");
+							} else {
+								logger.error(resp.body[0]);
+							}						
+						}
+					} else {
+						dfd.reject("invalid response back from api register request. Unable to complete app registeration");
+					}
+				} else {
+					dfd.reject(err);
+				}
+		});
+			
+			return dfd.promise;
+		} else {
+			return dfd.reject("Configuration field apiName is empty, please update config to include a valid apiName to register this app under");
+		}
 	}
 };
 

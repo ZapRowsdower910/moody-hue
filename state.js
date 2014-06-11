@@ -15,28 +15,6 @@ module.exports = {
 		portalUrl : "http://www.meethue.com/api/nupnp",
 		baseIp : ""
 	},
-	profiles : [
-		{	
-			"name" : "heavy green",
-			"hue" : 25500,
-			"sat" : 255
-		},
-		{	
-			"name" : "heavy blue",
-			"hue" : 46920,
-			"sat" : 255
-		},
-		{	
-			"name" : "heavy yellow",
-			"hue" : 12750,
-			"sat" : 255
-		},
-		{	
-			"name" : "heavy pink",
-			"hue" : 56100,
-			"sat" : 255
-		}
-	],
 	weather : {
 		lights : [
 			"2"
@@ -156,22 +134,6 @@ module.exports = {
 		],
 		defaultRoom : "Living Room"
 	},
-	groups : [
-		{
-			name : "accent a",
-			lights : [
-				2,
-				4
-			]
-		},
-		{
-			name : "accent b",
-			lights : [
-				3,
-				4
-			]
-		}
-	],
 	server : {
 		port : 8080,
 		ip_addr : "192.168.1.7"
@@ -181,9 +143,10 @@ module.exports = {
 		watcherInterval : 30
 	},
 	transitions : {
-		transitionTime : 1,
-		interval : 5,	// mins
+		transitionTime : 1,	// length of time in minutes that it should take a bulb to complete a color change
+		interval : 5,				// length of time in minutes that a new color change should occur
 		defaultRoom : 0,    // array index of rooms.definitions
+		colorSlide : 7500,	// The hue value change between each light
 		brightness : {
 			dim : 150,
 			bright : 250
@@ -195,10 +158,6 @@ module.exports = {
 		}
 	},
 	rooms : {
-		lights : [
-			1,
-			3
-		],
 		homeState : {
 			hue : 12000,
 			sat : 50,
@@ -246,5 +205,43 @@ module.exports = {
 			profile : "none",
 			rolloverTime : undefined
 		}
-	}
+	},
+	profiles : [
+		{	
+			"name" : "heavy green",
+			"hue" : 25500,
+			"sat" : 255
+		},
+		{	
+			"name" : "heavy blue",
+			"hue" : 46920,
+			"sat" : 255
+		},
+		{	
+			"name" : "heavy yellow",
+			"hue" : 12750,
+			"sat" : 255
+		},
+		{	
+			"name" : "heavy pink",
+			"hue" : 56100,
+			"sat" : 255
+		}
+	],
+	groups : [
+		{
+			name : "accent a",
+			lights : [
+				2,
+				4
+			]
+		},
+		{
+			name : "accent b",
+			lights : [
+				3,
+				4
+			]
+		}
+	]
 };

@@ -1,20 +1,40 @@
+/***
+* v 0.0.1
+*
+* A plugin to control hue lights by defined rooms.
+* 
+* Room definitions are defined in configurations under configs.rooms.definitions
+* A room is comprised of a name and an array of light Id's
+* 
+* Error Numbers
+* 		- 100 - Indicates an invalid room argument
+***/
+
 var _ = require("underscore");
 var when = require("when");
 var log4js = require("log4js");
 var logger = log4js.getLogger("Rooms");
 
-var hue = require("./hue-api");
-var server = require("./rest");
-var configs = require("./state");
-var utils = require("./utils");
+var hue = require("../hue-api");
+var server = require("../rest");
+var configs = require("../state");
+var utils = require("../utils");
 
 
 var timers = {};
 
 var methods = {
-	init : function(){
-		// init stuff
+	actions : {
+		init : function(){
+			// init stuff
+			
+		},
+		start : function(){
 		
+		},
+		stop : function(){
+		
+		}
 	},
 	checkTime : function(){
 		var now = new Date();
@@ -69,10 +89,11 @@ var methods = {
 
 			var change = {on:false};
 			var lightRsp = hue.lights.state.changeSet(lights,change);
+			
 			when.all(lightRsp).then(function(){
 				logger.info("Let darkness reign! Room has been turned off.");
 			}, function(err){
-				logger.error("One of the lights failed to turn on! ["+err+"]")
+				logger.error("One of the lights failed to turn off! ["+err+"]")
 			});
 		}
 
@@ -149,14 +170,39 @@ var methods = {
 		}
 
 	},
-	illum : function(room){
+	toggleRoom : function(room, toggle){
 
 		var roomDef = utils.findRoom(room);
 
 		if(roomDef == undefined){
 			throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
 		}
-		methods.roomControl.turnOn(roomDef.lights);
+		
+		if(toggle == true){
+			methods.roomControl.turnOn(roomDef.lights);
+		} else if(toggle == false){
+			methods.roomControl.turnOff(roomDef.lights);
+		} else {
+			logger.error("Invalid toggle value ["+toggle+"] boolean values must be used");
+		}
+		
+	},
+	validateApiRequest : function(req,resp){
+		var room = req.params.room;
+		logger.info("possible room ["+room+"]");
+		// Attempt to find room
+		var roomDef = utils.findRoom(room);
+		
+		if(roomDef != undefined || roomDef == ""){
+			resp.send(200);
+			return roomDef;
+		} else {
+			resp.send(500, {"error":100, "desc":"invalid room"});
+			if(roomDef == undefined){
+				throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
+			}
+		}
+		
 	}
 };
 
@@ -181,48 +227,90 @@ server.put({path:'/rooms/log/:state'}, function(req, resp, next){
 	return next();
 });
 
-server.put({path:"/rooms/illuminate/:room"},function(req,resp,next){
+server.put({path:'/rooms/illuminate/:room'},function(req,resp,next){
 	logger.info("request received for /rooms/illuminate");
 
+	// try{
+		// var room = req.params.room;
+		// logger.info("possible room ["+room+"]");
+		// if(room != undefined || room == ""){
+			// methods.toggleRoom(room, true);
+			// resp.send(200);
+		// } else {
+			// resp.send(500, {"error":100, "desc":"invalid room"});
+		// }
+	// } catch(e){
+		// logger.error("error illuminating room",e);
+		// resp.send(500);
+	// }
+	
 	try{
-		var room = req.params.room;
-		logger.info("possible room ["+room+"]");
-		if(room != undefined || room == ""){
-			methods.illum(room);
-			resp.send(200);
-		} else {
-			resp.send(500, {"error":100, "desc":"invalid room"});
-		}
+		var room = methods.validateApiRequest(req, resp);
+		methods.toggleRoom(room, true);
 	} catch(e){
-		logger.error("error illuminating room",e);
+		logger.error("error illuminating room ",e);
 		resp.send(500);
 	}
 	return next();
 });
 
-server.put({path:"/rooms/change/:room"},function(req,resp,next){
+server.put({path:'/rooms/darken/:room'},function(req,resp,next){
+	logger.info("request received for /rooms/darken");
+
+	// try{
+		// var room = req.params.room;
+		// logger.info("possible room ["+room+"]");
+		// if(room != undefined || room == ""){
+			// methods.toggleRoom(room, false);
+			// resp.send(200);
+		// } else {
+			// resp.send(500, {"error":100, "desc":"invalid room"});
+		// }
+	// } catch(e){
+		// logger.error("error darken-ing(?) room",e);
+		// resp.send(500);
+	// }
+	
+	try{
+		var room = methods.validateApiRequest(req, resp);
+		methods.toggleRoom(room, false);
+	} catch(e){
+		logger.error("error darken-ing(..?) room ",e);
+		resp.send(500);
+	}
+	
+	return next();
+});
+
+
+server.put({path:'/rooms/change/:room'},function(req,resp,next){
 	logger.info("request received for /rooms/change");
-	try{
-		var room = utils.findRoom(req.params.room);
-		var body = JSON.parse(req.body);
+	// try{
+		// var room = utils.findRoom(req.params.room);
+		// var body = JSON.parse(req.body);
 		
-		if(room != undefined || room == ""){
-			methods.roomControl.change(room, body);
-			resp.send(200);
-		} else {
-			logger.error("room was empty or undefined");
-			resp.send(500, {"error":100, "desc":"invalid room"});
-		}
+		// if(room != undefined || room == ""){
+			// methods.roomControl.change(room, body);
+			// resp.send(200);
+		// } else {
+			// logger.error("room was empty or undefined");
+			// resp.send(500, {"error":100, "desc":"invalid room"});
+		// }
+	// } catch(e){
+		// logger.error("error changing room",e);
+		// resp.send(500);
+	// }
+	
+	try{
+		var room = methods.validateApiRequest(req, resp);
+		var body = JSON.parse(req.body);
+		methods.change(room, body);
 	} catch(e){
-		logger.error("error illuminating room",e);
+		logger.error("error changing room ",e);
 		resp.send(500);
 	}
+	
 	return next();
-});
-
-server.get({path : 'rooms'}, function(req, resp, next){
-	console.log("gettin rooms");
-	hue.lights.state.isOn(2);
 });
 
 module.exports = methods;

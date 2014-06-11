@@ -1,8 +1,13 @@
 /***
-**	Transitions Plugin - randomly cycles through colors on random lights
+**	Transitions Plugin - Cycles a rooms lights through a random spectrum of colors. The colors move up at a random hue  **	   		interval, so the more lights added to a room the more deviation of color there will be.
+**
 **		- modes
-** 			- transitions - 
-**			- transitions-heavy - 
+** 			transitions - default transitions mode. This will use the transitions-mid configuraion values
+**			transitions-heavy - Produces heavily saturated light values. Will reduce the overall light of the room
+**										due to the heavily saturated colors
+**			transitions-mid - Mid range saturation value. Will produce a decent amount of light while still providing an
+**									acceptable amount of color
+**			transitions-light - Lightly saturated values. Produces the most light, while still allowing lights to be colored
 ****/
 
 var _ = require("underscore");
@@ -111,9 +116,10 @@ var methods = {
 		
 		_.each(room.lights, function(lightId){
 			var hueSet = configs.state.current.transitions.hue;
-			var thisHue = utils.randomNumber(hueSet, (hueSet + 10000));
+			var thisHue = utils.randomNumber(hueSet, (hueSet + configs.transitions.colorSlide));
+			// The hue value maxes out, if its greater than 65535 we want to wrap back to 0
 			if(thisHue > 65535){
-				thisHue = utils.randomNumber(0, 10000);
+				thisHue = utils.randomNumber(0, configs.transitions.colorSlide);
 			}
 			// Update current color config
 			configs.state.current.transitions.hue = thisHue;
@@ -161,6 +167,20 @@ var methods = {
 	}
 };
 
+
+/***
+* Starts transitions in a different saturation level. A lower saturation level will result in a less colorful light, but a brighter room.
+* Heavier saturated colors will result in illuminating the room less effienctly then a lightly saturated room. Default saturation 
+* level is mid.
+*
+* Saturation ranges can be configured using the transitions configuration object satLevels (configs.transitions.satLevels). The
+* values are the min and max values to use when picking a random saturation value.
+*
+* Valid str values are:
+*		light - enable lightly saturated mode - uses configuration option configs.transitions.satLevels.light
+*		mid - enable mid saturation mode - uses configuration option configs.transitions.satLevels.mid
+*		heavy - enable heavy saturation mode - uses configuration option configs.transitions.satLevels.heavy
+***/
 server.put({path:"/transitions/start/:str"}, function(req, res, next){
 	try{
 		var mode = "transitions-" + req.params.str;
