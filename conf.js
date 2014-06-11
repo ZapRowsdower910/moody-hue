@@ -2,7 +2,7 @@
 	"general" : {
 		"longitude" : -81.3977210,
 		"latitude" : 41.6986320,
-		"mode":"transitions"
+		"mode":"transitions-heavy"
 	},
 	"accents" : {
 		"enabled" : false,

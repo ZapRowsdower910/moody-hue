@@ -61,6 +61,7 @@ var api = {
 					dfd.resolve(resp.body);
 				} else {
 					utils.requestError(err);
+					dfd.reject(err);
 				}
 			});
 		});
@@ -79,7 +80,8 @@ var api = {
 				if((rsp != undefined && rsp.length) && (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != "")){
 					configs.hue.baseIp = rsp[0].internalipaddress;
 					logger.info("Found local server ["+configs.hue.baseIp+"]");
-					configs.state.current.scanningForBase = "completed";
+					configs.state.current.isScanningForBase = false;
+					configs.state.current.isSetup = true;
 					
 					dfd.resolve();
 				} else {
@@ -87,6 +89,7 @@ var api = {
 				}
 				
 			} else {
+				utils.requestError(err);
 				dfd.reject(err);
 			}
 		});
@@ -94,10 +97,7 @@ var api = {
 		return dfd.promise;
 	},
 	isSetup : function(){
-
-		if((configs.hue.baseIp == undefined || configs.hue.baseIp == "") 
-			|| (configs.state.current.scanningForBase == undefined || configs.state.current.scanningForBase != "completed"))
-		{
+		if(configs.state.current.isSetup == false && !configs.state.current.isScanningForBase){
 			logger.info("Setting up hue API");
 			configs.state.current.scanningForBase = true;
 			return api.setup();
@@ -153,23 +153,31 @@ var lights = {
 			logger.info("Blinking light ["+lightId+"]");
 			var blinkIterations = 10;
 
-			var originalState = _.clone(currentState);
+			// var originalState = _.clone(currentState.state);
 			
 			var limit = 0;
 			var blinkTimer = setInterval(function(){
 				
-				if(limit < 10){
+				if(limit < blinkIterations){
 
 					lights.state.isOn(lightId).then(function(isOn){
 						change.on = !isOn;
 						lights.state.change(lightId, change);
+					},
+					function(e){
+						logger.error("blink - isOn failed ["+e+"]");
 					});
 
 					limit++;	
 				} else {
 					clearInterval(blinkTimer);
-					lights.state.change(lightId, originalState).then(function(){
+					currentState.state.transitiontime = 10;
+					logger.debug("reverting back to original state ["+JSON.stringify(currentState.state)+"]");
+					lights.state.change(lightId, utils.filterHueStateObj(currentState.state)).then(function(){
 						logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
+					},
+					function(e){
+						logger.error("blink - state change failed ["+JSON.stringify(e)+"]");
 					});
 
 					dfd.resolve();

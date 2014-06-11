@@ -181,8 +181,8 @@ module.exports = {
 		watcherInterval : 30
 	},
 	transitions : {
-		transitionTime : .5,
-		interval : 1,	// mins
+		transitionTime : 1,
+		interval : 5,	// mins
 		defaultRoom : 0,    // array index of rooms.definitions
 		brightness : {
 			dim : 150,

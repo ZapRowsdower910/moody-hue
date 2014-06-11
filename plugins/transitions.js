@@ -78,20 +78,34 @@ var methods = {
 		}
 	},
 	prepareChange : function(room){
-		logger.info("Starting transitions cycle for room ["+room.name+"]");
+		logger.info("Starting transitions cycle for room [" + JSON.stringify(room) + "]");
 
 		var set = [];
 
 		_.each(room.lights,function(lightId){
-			hue.lights.state.isOn(lightId).then(function(isOn){
+			var pms = hue.lights.state.isOn(lightId).then(function(isOn){
 				if(isOn == false){
 					var promise = hue.lights.turnOnDim(lightId);
-					set.push(promise);
+					promise.catch(function(e){
+						logger.error("turn on dim failed ["+JSON.stringify(e)+"]");
+					});
+					return promise;
 				}
+			},
+			function(e){
+				logger.error("error finding if light ["+lightId+"] is on. err["+JSON.stringifty(e)+"]");
 			});
+
+			set.push(pms);
 		});
 
-		when.all(set).then(function(){methods.changeColor(room)});
+		when.all(set).then(function(){
+				methods.changeColor(room);
+			},
+			function(e){
+				logger.error("when all err ["+e+"]")
+			}
+		);
 	},
 	changeColor : function(room){
 		
@@ -153,6 +167,8 @@ server.put({path:"/transitions/start/:str"}, function(req, res, next){
 		logger.info("request for /transitions/start received - transition mode ["+mode+"]");
 		configs.state.current.mode = mode;
 		// methods.cycle();
+
+
 	}catch(e){
 		logger.error("Error while attempting start transitions ["+e+"]");
 	}

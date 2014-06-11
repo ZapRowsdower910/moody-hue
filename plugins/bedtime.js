@@ -50,7 +50,7 @@ var methods = {
 
 // Server end points
 server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next){
-	logger.info("Received /bedtime request");
+	logger.info("Received /bedtime/reading request");
 	try{
 		var bedtimeGroup = _.find(configs.groups, function(v){
 			if(v.name == "bedtime"){
@@ -70,8 +70,9 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			
 			// Get all lights
 			hue.lights.state.get("").then(function(rsp){
+				logger.info("get rsp ["+rsp+"]");
 				_.each(rsp,function(v,i){
-					if(bedtimeGroup.lights.indexOf(i) > -1){
+					if(bedtimeGroup.lights.indexOf(parseInt(i)) < 0){
 						hue.lights.turnOff(i);
 					} else {
 						hue.lights.turnOn(i);
@@ -97,7 +98,7 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 });
 
 server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
-	logger.info("Received /bedtime request");
+	logger.info("Received /bedtime/sleep request");
 	try{
 		var bedtimeGroup = _.find(configs.groups, function(v){
 			if(v.name == "bedtime"){

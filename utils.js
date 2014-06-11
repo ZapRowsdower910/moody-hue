@@ -1,3 +1,7 @@
+var _ = require("underscore");
+var configs = require("./state");
+var log4js = require("log4js");
+var logger = log4js.getLogger("Utils");
 
 var methods = {
 	convertMinToMilli : function(mins){
@@ -15,6 +19,23 @@ var methods = {
 		if(parts.length == 2){
 			return parts[1];
 		}
+
+		return;
+	},
+	filterHueStateObj : function(original){
+		delete original.colormode;
+		delete original.description;
+		delete original.reachable;
+
+		return original;
+	},
+	findRoom : function(roomName){
+		return _.find(configs.rooms.definitions, function(v,i){
+			if(v.name == roomName){
+				return v;
+			}
+		});
+
 	},
 	requestError : function(){
 

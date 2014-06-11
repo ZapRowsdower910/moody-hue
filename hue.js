@@ -77,10 +77,12 @@ main = {
 			configs.state.timers = {};
 			configs.state.current = {};
 			configs.state.current.mode = "startup";
+			configs.state.current.isSetup = false;
+			configs.state.current.isScanningForBase = false;
 
-			// main.registerApp.checkStatus();
+			main.registerApp.checkStatus();
 			
-			main.startPlugins();
+			// main.startPlugins();
 			main.refreshTimes();
 		} catch(e){
 			logger.error("Error attempting to start app", e);

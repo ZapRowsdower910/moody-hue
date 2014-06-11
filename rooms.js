@@ -6,6 +6,7 @@ var logger = log4js.getLogger("Rooms");
 var hue = require("./hue-api");
 var server = require("./rest");
 var configs = require("./state");
+var utils = require("./utils");
 
 
 var timers = {};
@@ -17,7 +18,7 @@ var methods = {
 	},
 	checkTime : function(){
 		var now = new Date();
-		
+		logger.debug("Current time ["+now+"] - sunset is at ["+configs.state.times.sunsetStart+"] compare result ["+now > configs.state.times.sunsetStart+"]");
 		if(now > configs.state.times.sunsetStart){
 			return true;
 		} else {
@@ -25,8 +26,14 @@ var methods = {
 		}
 	},
 	roomControl : {
+		change : function(room,change){
+			logger.info("changing lights ["+room+"] change ["+JSON.stringify(change)+"]");
+			_.each(room.lights,function(i){
+				hue.lights.state.change(i, change);
+			});
+		},
 		turnOn : function(lights){
-			logger.info("preparing to turn on room. room configs ["+configs.rooms+"]");
+			logger.info("preparing to turn on room. room configs [" + JSON.stringify(configs.rooms) + "]");
 
 			// Cycle through lights and check to see if they're already on.
 			// If they are on already, we don't want to override their current
@@ -36,7 +43,7 @@ var methods = {
 			_.each(configs.rooms.homeLights, function(lightId){
 				hue.lights.state.isOn(lightId).then(function(isOn){
 					if(!isOn){
-						var change = configs.rooms.homeState;
+						var change = _.clone(configs.rooms.homeState)	;
 						change.on = true;
 						change.transitiontime = 1;
 
@@ -141,6 +148,15 @@ var methods = {
 			hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
 		}
 
+	},
+	illum : function(room){
+
+		var roomDef = utils.findRoom(room);
+
+		if(roomDef == undefined){
+			throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
+		}
+		methods.roomControl.turnOn(roomDef.lights);
 	}
 };
 
@@ -162,6 +178,45 @@ server.put({path:'/rooms/log/:state'}, function(req, resp, next){
 		resp.send(500);
 	}
 	
+	return next();
+});
+
+server.put({path:"/rooms/illuminate/:room"},function(req,resp,next){
+	logger.info("request received for /rooms/illuminate");
+
+	try{
+		var room = req.params.room;
+		logger.info("possible room ["+room+"]");
+		if(room != undefined || room == ""){
+			methods.illum(room);
+			resp.send(200);
+		} else {
+			resp.send(500, {"error":100, "desc":"invalid room"});
+		}
+	} catch(e){
+		logger.error("error illuminating room",e);
+		resp.send(500);
+	}
+	return next();
+});
+
+server.put({path:"/rooms/change/:room"},function(req,resp,next){
+	logger.info("request received for /rooms/change");
+	try{
+		var room = utils.findRoom(req.params.room);
+		var body = JSON.parse(req.body);
+		
+		if(room != undefined || room == ""){
+			methods.roomControl.change(room, body);
+			resp.send(200);
+		} else {
+			logger.error("room was empty or undefined");
+			resp.send(500, {"error":100, "desc":"invalid room"});
+		}
+	} catch(e){
+		logger.error("error illuminating room",e);
+		resp.send(500);
+	}
 	return next();
 });
 
