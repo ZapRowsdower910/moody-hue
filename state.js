@@ -12,7 +12,7 @@ module.exports = {
 		}
 	},
 	hue : {
-		portalUrl : "http://www.meethue.com/api/nupnp",
+		portalUrl : "https://www.meethue.com/api/nupnp",
 		baseIp : ""
 	},
 	weather : {

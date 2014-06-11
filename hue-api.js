@@ -32,6 +32,9 @@ var api = {
 					dfd.reject(err);
 				}
 			});
+		},
+		function(err){
+			dfd.reject(err);
 		});
 		
 		return dfd.promise;
@@ -48,6 +51,9 @@ var api = {
 					dfd.reject(err);
 				}
 			});
+		},
+		function(err){
+			dfd.reject(err);
 		});
 		
 		return dfd.promise;
@@ -64,6 +70,9 @@ var api = {
 					dfd.reject(err);
 				}
 			});
+		},
+		function(err){
+			dfd.reject(err);
 		});
 		
 		return dfd.promise;
@@ -85,7 +94,7 @@ var api = {
 					
 					dfd.resolve();
 				} else {
-					logger.error("invalid response back from base server [", rsp, "]");
+					dfd.reject("invalid response back from base server [", rsp, "]");
 				}
 				
 			} else {

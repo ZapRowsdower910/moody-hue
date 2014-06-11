@@ -84,27 +84,39 @@ main = {
 		logger.info("Checking app authentication status of user ["+configs.general.apiName+"]..");
 		
 		// Attempt to make an api call using the configured app name
-		hue.api.get("").then(function(resp){
+		var prms = hue.api.get("").then(function(resp){
+			var dfd = when.defer();
 
 			if(resp.lights){
 				logger.info("Successful api call made! We're is good to go");
+				dfd.resolve();
 			} else {
 				logger.warn("Oh cheese and rice! Something isn't right..");
 				if(resp[0].error.type == 1){
 					logger.info("Application has not yet been authenticated with bridge - starting activaction flow");
 					hue.api.registerUser().then(function(){
 						logger.info("API User all setup");
+						dfd.resolve();
 					},
 					function(err){
-						logger.error("unable to complete app registration with the hue base server [",err,"]");
+						dfd.reject("unable to complete app registration with the hue base server [",err,"]");
 					});
 				} else {
-					logger.error("Not sure what we have here [",rsp,"]");
+					dfd.reject("Not sure what we have here [",rsp,"]");
 				}
 			}
-		}).otherwise(function(err){
+
+			return dfd.promise;
+		}, function(err){
 			logger.error("Error while attempting to check app status[",err,"]");
 		});
+
+		prms.then(
+			main.startPlugins, 
+			function(err){
+				logger.error(err);
+			}
+		);
 	},
 	// registerApp : {
 		
