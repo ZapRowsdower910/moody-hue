@@ -10,3 +10,5 @@ logs/log.file.3
 *.sublime-project
 
 *.sublime-workspace
+
+node_modules/*
