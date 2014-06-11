@@ -1,2 +1,12 @@
 
 *.file
+
+logs/log.file.1
+
+logs/log.file.2
+
+logs/log.file.3
+
+*.sublime-project
+
+*.sublime-workspace
