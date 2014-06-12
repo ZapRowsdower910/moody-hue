@@ -57,13 +57,13 @@ main = {
 			configs = mergedConfigs;
 
  			// Start rest server
-			// server.listen(configs.server.port, configs.server.ip_addr, function(){
-				// logger.info("====================================================");
-				// logger.info("=========== [ Starting up REST service ] ===========");
-			    // logger.info("=========== [ App %s           ] ===========", server.name);
-				// logger.info("=========== [ listening at %s ] ======", server.url );
-				// logger.info("====================================================");
-			// });
+			server.listen(configs.server.port, configs.server.ip_addr, function(){
+				logger.info("====================================================");
+				logger.info("=========== [ Starting up REST service ] ===========");
+			    logger.info("=========== [ App %s           ] ===========", server.name);
+				logger.info("=========== [ listening at %s ] ======", server.url );
+				logger.info("====================================================");
+			});
 
 			// Setup session objects
 			configs.state = {};
@@ -75,7 +75,7 @@ main = {
 				timers : {}
 			};
 
-			// main.checkStatus();
+			main.checkStatus();
 			// main.startPlugins();
 			// Get intial boot times
 			main.times.refresh();

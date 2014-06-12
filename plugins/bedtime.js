@@ -1,3 +1,13 @@
+/*****
+**	v0.0.1
+**	bedtime - A plugin to provide sleep state functionality. The idea is that
+**	the bedtime plugin would be able to force a 'sleep' mode where automated
+**	light cycling (like transitions plugin) are forced off. It would be able to
+**	basically switch on/off from allowing low level plugins from being able to 
+**	modify the state of a light.
+**
+*****/
+
 var _ = require("underscore");
 
 // local deps
@@ -44,20 +54,19 @@ var methods = {
 				clearInterval(configs.state.timers.bedtimeWatcher);
 			}
 		},
-		utils.convertMinToMilli(configs.bedtime.watcherInterval));
+		utils.converter.minToMilli(configs.bedtime.watcherInterval));
 	}
 };
 
-// Server end points
+/**
+*	Turns off all the lights but ones designated as the "Bedroom" under 
+*	configs.rooms.definitions
+*
+**/
 server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next){
 	logger.info("Received /bedtime/reading request");
 	try{
-		var bedtimeGroup = _.find(configs.groups, function(v){
-			if(v.name == "bedtime"){
-				return v;
-			}
-		});
-		
+		var bedtimeGroup = utils.findRoom("Bedtime");
 
 		// TODO: we a way to either reject all defereds to the hue-api or
 		// to wrap the api in better error state handling...
@@ -84,7 +93,7 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			});
 			
 		} else {
-			logger.error("no bedtime group set found. Add one to use this functionality!");
+			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
 			logger.debug(JSON.stringify(configs));
 		}
 		
@@ -123,6 +132,25 @@ server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
 		logger.error("Error while attempting to go into bedtime mode: ", e);
 		resp.json(500);
 	}
+
+	return next();
+});
+
+server.put({path : "/bedtime/wakeup"},function(){
+	logger.info("request received for wakeup");
+	var bedtimeGroup = _.find(configs.groups, function(v){
+		if(v.name == "bedtime"){
+			return v;
+		}
+	});
+	
+	if(bedtimeGroup){
+		_.each(bedtimeGroup.lights, function(light){
+			hue.lights.turnOn(light);
+		});
+	}
+
+	configs.state.current.mode = "none";
 
 	return next();
 });

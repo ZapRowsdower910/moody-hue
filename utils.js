@@ -14,13 +14,6 @@ var methods = {
 		hrsToMilli : function(hrs){
 			return (((hrs * 60) * 60) * 1000);
 		}
-	}
-	convertMinToMilli : function(mins){
-		
-	},
-	// Hue transition time is in the 100s of milli-seconds
-	convertMinToTransitionTime : function(mins){
-		
 	},
 	randomNumber : function(min,max){
 		return Math.floor(Math.random() * (max - (min + 1)) + (min + 1));

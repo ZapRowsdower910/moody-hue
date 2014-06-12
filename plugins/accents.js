@@ -1,6 +1,8 @@
 /***
 **	v0.0.1 
 **
+**	Currently broken - mid refactor
+**
 **	Accents Plugin - cycle through different light profiles
 **		- modes
 ** 			- accents - Accents mode will cycle a room through different color profiles.
@@ -45,8 +47,8 @@ methods = {
 					configs.state.current.accents = {};
 
 					// convert minutes to seconds
-					configs.accents.timer = utils.convertMinToMilli(configs.accents.timer);
-					configs.accents.transitionTime = utils.convertMinToTransitionTime(configs.accents.transitionTime);
+					configs.accents.timer = utils.converter.minToMilli(configs.accents.timer);
+					configs.accents.transitionTime = utils.converter.minToTransitionTime(configs.accents.transitionTime);
 
 					// // Transition time must be lower than timer
 					// var adjustedTime = configs.accents.timer / 100;

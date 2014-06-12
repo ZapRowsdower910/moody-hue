@@ -1,3 +1,18 @@
+/******
+**	v0.0.1
+**	weather plugin - Visualizes weather predictions for a give long / lat.
+**	Precipitation insensity is displayed with a bulb brightness osilation.
+**	The faster the osilation, the greater the intensity. Repeated blinking
+**	between colors describes a multipart forecast (partly-cloudy-day vs 
+**	partly-cloudy-night). Colors are configurable by overriding the forecast
+** 	config under configs.weather.profiles
+**
+**	valid time frames
+**		- current
+**		- tomorrow
+**		- week - The current weather prediction of the overall week
+**
+*******/
 var when = require("when");
 var _ = require("underscore");
 var Forecast = require("forecast");
@@ -210,6 +225,12 @@ var api = {
 	}
 };
 
+
+/**
+*	Shows the weather on the configured light array set on configs.weather.lights
+*
+*	@param when - the time frame to return (current, tomorrow, week)
+**/
 server.get({path : '/weather/show/:when', version : '1'}, function(req, resp, next){
 	console.log("request received on /weather/show/:when");
 	
@@ -219,6 +240,12 @@ server.get({path : '/weather/show/:when', version : '1'}, function(req, resp, ne
 	return next();
 });
 
+/**
+*	Shows the weather on a particular bulb
+*
+*	@param when - the time frame to return (current, tomorrow, week)
+*	@param id - the light bulb to display the results on
+**/
 server.get({path : '/weather/show/:when/:id', version : '1'}, function(req, resp, next){
 	console.log("request received on /weather/show/:when/:id");
 	

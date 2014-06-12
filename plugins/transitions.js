@@ -47,7 +47,7 @@ var methods = {
 					timers.cycles = setInterval(function(){
 						methods.cycle();
 					},
-					utils.convertMinToMilli(configs.transitions.interval));
+					utils.converter.minToMilli(configs.transitions.interval));
 				} else {
 					logger.error("Transitions is already started");
 				}
@@ -152,7 +152,7 @@ var methods = {
 					configs.transitions.satLevels.mid[1]);
 			}
 			
-			var trans = utils.convertMinToTransitionTime(configs.transitions.transitionTime);
+			var trans = utils.converter.minToTransitionTime(configs.transitions.transitionTime);
 			var change = {
 				"bri" : bri,
 				"sat" : sat,
