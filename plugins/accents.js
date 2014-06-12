@@ -1,4 +1,6 @@
 /***
+**	v0.0.1 
+**
 **	Accents Plugin - cycle through different light profiles
 **		- modes
 ** 			- accents - Accents mode will cycle a room through different color profiles.
@@ -38,17 +40,13 @@ methods = {
 		init : function(){
 			logger.info("Attempting to startup Accents");
 
-			if(configs.accents.enabled){
 				try{
 					configs.state.accents = {};
 					configs.state.current.accents = {};
 
 					// convert minutes to seconds
 					configs.accents.timer = utils.convertMinToMilli(configs.accents.timer);
-					logger.debug("Timer converted to millis ["+configs.accents.timer+"]");
-
 					configs.accents.transitionTime = utils.convertMinToTransitionTime(configs.accents.transitionTime);
-					logger.debug("Accents transition timer converted to ["+configs.accents.transitionTime+"]");
 
 					// // Transition time must be lower than timer
 					// var adjustedTime = configs.accents.timer / 100;
@@ -61,22 +59,20 @@ methods = {
 						
 					// }
 
-					methods.checkGroups();
+					methods.buildActiveGroups();
 
 					// Find the default room
 					configs.state.accents.defaultRoom = _.find(configs.rooms.definitions, function(v){
 						return v.name == configs.accents.defaultRoom;
 					});
-
-					logger.info("Default room set to ["+configs.state.accents.defaultRoom.name+"]");;
-					configs.state.current.accents.room =configs.state.accents.defaultRoom;
+					
+					logger.debug("Default room set to ["+configs.state.accents.defaultRoom.name+"]");
+					configs.state.current.accents.room = configs.state.accents.defaultRoom;
 
 				} catch (e){
-					logger.error("Exception while attempting to start Accents", e);
+					logger.error("Exception while attempting to init Accents", e);
 				}
-			} else {
-				logger.info("Accents mode has been disabled");
-			}
+
 		},
 		start : function(){
 			logger.info("Enabling Accent mode");
@@ -107,53 +103,29 @@ methods = {
 			return true;
 		}
 	},
-	checkGroups : function(){
+	buildActiveGroups : function(){
 		
-		hue.groups.get().then(function(rsp){
-			
-			// Build a list of unique groups we need
-			data.uniqueGroups = [];
-			data.mergedProfiles = [];
-			_.each(configs.accents.profiles, function(profile){
-				if(data.uniqueGroups.indexOf(profile.group) < 0){
-					// collect distinct group names
-					data.uniqueGroups.push(profile.group);
-					// collect distinct profiles
-					data.mergedProfiles.push(profile);
-				}
-			});
-			
-			// Find which groups we need to add
-			data.profileGroups = [];
-			_.each(rsp, function(v,k){
-				if(_.contains(data.uniqueGroups, v.name)){
-					data.profileGroups.push(v.name);
-				}
-				
-				_.find(data.mergedProfiles,function(profile){
-					if(v.name == profile.group){
-						profile.id = k;
-						return true;
-					}
-				});
-
-			});
-			
-			_.each(configs.groups, function(v){
-				_.find(data.mergedProfiles,function(profile){
-					if(v.name == profile.group){
-						profile.lights = v.lights;
-						return true;
-					}
-				});
-			});
-			
-			methods.actions.start();
-			
-		}).otherwise(function(err){
-			// TODO: error handling
-			logger.info("check groups otherwise: ",err);
+		// Build a list of unique groups and profiles we need
+		data.uniqueGroups = [];
+		data.mergedProfiles = [];
+		_.each(configs.accents.profiles, function(profile){
+			if(data.uniqueGroups.indexOf(profile.group) < 0){
+				// collect distinct group names
+				data.uniqueGroups.push(profile.group);
+				// collect distinct profiles
+				data.mergedProfiles.push(profile);
+			}
 		});
+		
+		_.each(configs.groups, function(v){
+			_.find(data.mergedProfiles,function(profile){
+				if(v.name == profile.group){
+					profile.lights = v.lights;
+					return true;
+				}
+			});
+		});
+
 	},
 	startChange : function(){
 		try{

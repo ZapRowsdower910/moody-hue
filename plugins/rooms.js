@@ -1,13 +1,14 @@
 /***
-* v 0.0.1
-*
-* A plugin to control hue lights by defined rooms.
-* 
-* Room definitions are defined in configurations under configs.rooms.definitions
-* A room is comprised of a name and an array of light Id's
-* 
-* Error Numbers
-* 		- 100 - Indicates an invalid room argument
+**	 v 0.0.1
+**
+** 		A plugin to control hue lights by defined rooms. The intention of this plugin is to make it easier to
+**		apply effects to an entire room.
+** 
+** 		Room definitions are defined in configurations under configs.rooms.definitions
+** 		A room is comprised of a name and an array of light Id's
+** 
+** 		Error Numbers
+** 			- 100 - Indicates an invalid room argument
 ***/
 
 var _ = require("underscore");

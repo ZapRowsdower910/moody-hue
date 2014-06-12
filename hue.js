@@ -57,25 +57,30 @@ main = {
 			configs = mergedConfigs;
 
  			// Start rest server
-			server.listen(configs.server.port, configs.server.ip_addr, function(){
-				logger.info("====================================================");
-				logger.info("=========== [ Starting up REST service ] ===========");
-			    logger.info("=========== [ App %s           ] ===========", server.name);
-				logger.info("=========== [ listening at %s ] ======", server.url );
-				logger.info("====================================================");
-			});
+			// server.listen(configs.server.port, configs.server.ip_addr, function(){
+				// logger.info("====================================================");
+				// logger.info("=========== [ Starting up REST service ] ===========");
+			    // logger.info("=========== [ App %s           ] ===========", server.name);
+				// logger.info("=========== [ listening at %s ] ======", server.url );
+				// logger.info("====================================================");
+			// });
 
 			// Setup session objects
 			configs.state = {};
 			configs.state.timers = {};
-			configs.state.current = {};
-			configs.state.current.mode = "startup";
-			configs.state.current.isSetup = false;
-			configs.state.current.isScanningForBase = false;
+			configs.state.current = {
+				mode : "startup",
+				isSetup : false,
+				isScanningForBase : false,
+				timers : {}
+			};
 
-			main.checkStatus();
+			// main.checkStatus();
 			// main.startPlugins();
-			main.refreshTimes();
+			// Get intial boot times
+			main.times.refresh();
+			// setup a watcher to refresh the times daily
+			main.times.watcher.start();
 		} catch(e){
 			logger.error("Error attempting to start app", e);
 		}
@@ -118,45 +123,6 @@ main = {
 			}
 		);
 	},
-	// registerApp : {
-		
-		// start: function(){
-			// if(configs.general.apiName){
-				// var data = {
-					// devicetype : "moody-hues nodejs app",
-					// username : configs.general.apiName
-				// };
-				// needle.post(configs.hue.baseIp + "/api", data, {json : true}, main.registerApp.processResult);
-			// } else {
-				// logger.error("Configuration field apiName is empty, please update config to include a valid apiName to register this app under");
-			// }
-		// },
-		// processResult : function(err,resp){
-			// if(!err){
-				// // logger.info(resp);
-				// if(resp.body){
-					// var rsp = resp.body;
-					// // logger.info(rsp[0]);
-					// if(!rsp[0].error){
-						// logger.info("New API user created successfully");
-					// } else {
-						// if(resp.body[0].error.type == 7){
-							// logger.error("Check your apiName configuration - this fields needs to be between 10-40 characters long.");
-							// logger.error("Unable to continue, exiting");
-						// } else if(resp.body[0].error.type == 101){
-							// logger.info("Ok, you have 30 seconds to click the button on your bridge to authenticate this app before the request expires. If 30 seconds elapses, re-run the program to send another registration request.");
-						// } else {
-							// logger.error(resp.body[0]);
-						// }						
-					// }
-				// } else {
-					// logger.error("invalid response back from api register request. Unable to complete app registeration");
-				// }
-			// } else {
-				// main.requestError(err);
-			// }
-		// }
-	// },
 	startPlugins : function(){
 		logger.info("Boot sequence completed. Starting up plugins");
 		try{
@@ -167,10 +133,43 @@ main = {
 			logger.error("Error while starting up plugins: ", e);
 		}
 	},
-	refreshTimes : function(){
-		var now = new Date();
-		configs.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
-		configs.state.times.rolloverTime = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
+	times : {
+		refresh : function(){
+			var now = new Date();
+			configs.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
+		},
+		watcher : {
+			start : function(){
+				// When a watcher is started most likely it will not be at midnight. So we need to detect the time until
+				// midnight and wait for that amount of time to reset the time values. After that first time we can simply
+				// refresh the times every 24hrs.
+				var now = new Date();
+				var tomorrow = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
+				var timeToWait = tomorrow - now;
+				logger.info("Scheduling time refresh in ["+timeToWait+"]");
+				configs.state.current.timers.timeRefresh = setTimeout(function(){
+					// reset times
+					main.times.watcher.interval();
+					// make sure the timer var is cleared so we can reuse it
+					clearTimeout(configs.state.current.timers.timeRefresh);
+					// setup an interval event to allow for refreshing every 24hrs
+					configs.state.current.timers.timeRefresh = setInterval(
+						main.times.watcher.interval,
+						utils.converter.hrsToMilli(24)
+					);
+					
+				},
+				timeToWait);
+			},
+			stop : function(){
+				clearTimeout(configs.state.current.timers.timesRefresh);
+			},
+			interval : function(){
+				if(configs.state.times.rolloverTime < now){
+					main.refreshTimes();
+				}
+			}
+		}
 	},
 	isDarkOut : function(){
 		var now = new Date();

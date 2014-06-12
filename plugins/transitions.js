@@ -143,7 +143,7 @@ var methods = {
 				// Adjust brighter sections of lite to a lower brightness
 				// to maintain room light level
 				if(thisHue > 10000 && thisHue < 43000){
-					bri = utils.randomNumber(75, 150);
+					bri = utils.randomNumber(100, 175);
 				}
 				sat = utils.randomNumber(configs.transitions.satLevels.heavy[0],
 					configs.transitions.satLevels.heavy[1]);

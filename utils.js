@@ -4,12 +4,23 @@ var log4js = require("log4js");
 var logger = log4js.getLogger("Utils");
 
 var methods = {
+	converter : {
+		minToMilli : function(mins){
+			return ((mins * 60) * 1000);
+		},
+		minToTransitionTime : function(mins){
+			return ((mins * 60) * 10);
+		},
+		hrsToMilli : function(hrs){
+			return (((hrs * 60) * 60) * 1000);
+		}
+	}
 	convertMinToMilli : function(mins){
-		return ((mins * 60) * 1000);
+		
 	},
 	// Hue transition time is in the 100s of milli-seconds
 	convertMinToTransitionTime : function(mins){
-		return ((mins * 60) * 10);
+		
 	},
 	randomNumber : function(min,max){
 		return Math.floor(Math.random() * (max - (min + 1)) + (min + 1));
