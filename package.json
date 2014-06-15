@@ -3,16 +3,16 @@
   "version": "0.0.1",
   "description": "Simple home automation rest service for Philips Hue.",
   "main": "hue.js",
-  "dependencies": {
-	"forecast" : "0.1.1",
-	"log4js" : "0.6.14",
-    "needle": "0.7.2",		
-	"restify":"2.8.1",
-	"socket.io":"1.0.4",
-	"suncalc" : "1.5.2",
-	"underscore" : "1.6.0",
-	"underscore-deep-extend" : "0.0.3",
-	"when" : "3.2.3"
+  "dependencies" : {
+  	"forecast" : "0.1.1",
+  	"log4js" : "0.6.14",
+    "needle" : "0.7.2",		
+  	"restify" : "2.8.1",
+  	"socket.io" : "1.0.4",
+  	"suncalc" : "1.5.2",
+  	"underscore" : "1.6.0",
+  	"underscore-deep-extend" : "0.0.3",
+  	"when" : "3.2.3"
   },
   "scripts": {},
   "repository": {
@@ -20,10 +20,10 @@
     "url": "git://github.com/shortRound1911/moody-hue.git"
   },
   "keywords": [
-	"hue",
-	"philips",
-	"rest",
-	"home automation"
+  	"hue",
+  	"philips",
+  	"rest",
+  	"home automation"
   ],
   "author": "shortround1911",
   "bugs": {

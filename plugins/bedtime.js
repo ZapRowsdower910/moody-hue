@@ -55,6 +55,23 @@ var methods = {
 			}
 		},
 		utils.converter.minToMilli(configs.bedtime.watcherInterval));
+	},
+	sleepyTime : function(exceptions){
+		if(exceptions == undefined){
+			exceptions = [];
+		}
+		// Get all lights
+		hue.lights.state.get("").then(function(rsp){
+			_.each(rsp,function(v,i){
+				if(exceptions.indexOf(parseInt(i)) < 0){
+					hue.lights.turnOff(i);
+				} else {
+					hue.lights.turnOn(i);
+				}
+			});
+			
+			methods.bedtimeWatcher(new Date());
+		});
 	}
 };
 
@@ -66,7 +83,7 @@ var methods = {
 server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next){
 	logger.info("Received /bedtime/reading request");
 	try{
-		var bedtimeGroup = utils.findRoom("Bedtime");
+		var bedtimeGroup = utils.findRoom("Bedroom");
 
 		// TODO: we a way to either reject all defereds to the hue-api or
 		// to wrap the api in better error state handling...
@@ -77,24 +94,12 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 		// to indicate bad state, which isn't being caught anywhere for some reason.
 		if(bedtimeGroup){
 			
-			// Get all lights
-			hue.lights.state.get("").then(function(rsp){
-				logger.info("get rsp ["+rsp+"]");
-				_.each(rsp,function(v,i){
-					if(bedtimeGroup.lights.indexOf(parseInt(i)) < 0){
-						hue.lights.turnOff(i);
-					} else {
-						hue.lights.turnOn(i);
-					}
-				});
-				
-				configs.state.current.mode = "bedtime";
-				methods.bedtimeWatcher(new Date());
-			});
+			methods.sleepyTime(bedtimeGroup.lights);
+			configs.state.current.mode = "bedtime";
 			
 		} else {
 			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
-			logger.debug(JSON.stringify(configs));
+			logger.debug(configs);
 		}
 		
 		resp.json(200);
@@ -109,23 +114,9 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
 	logger.info("Received /bedtime/sleep request");
 	try{
-		var bedtimeGroup = _.find(configs.groups, function(v){
-			if(v.name == "bedtime"){
-				return v;
-			}
-		});
 		
-		if(bedtimeGroup){
-			logger.info("enter sleep mode.");
-			_.each(bedtimeGroup.lights, function(id){
-				hue.lights.turnOff(id);
-			});
-			
-			configs.state.current.mode = "sleep";
-		} else {
-			logger.error("no bedtime group set found. Add one to use this functionality!");
-			logger.debug(JSON.stringify(configs));
-		}
+		methods.sleepyTime();
+		configs.state.current.mode = "sleep";
 		
 		resp.json(200);
 	} catch (e){
@@ -137,20 +128,31 @@ server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
 });
 
 server.put({path : "/bedtime/wakeup"},function(){
-	logger.info("request received for wakeup");
-	var bedtimeGroup = _.find(configs.groups, function(v){
-		if(v.name == "bedtime"){
-			return v;
-		}
-	});
-	
-	if(bedtimeGroup){
-		_.each(bedtimeGroup.lights, function(light){
-			hue.lights.turnOn(light);
-		});
-	}
+	logger.info("request received /bedtime/wakeup wakeup");
 
-	configs.state.current.mode = "none";
+	try{
+
+		var bedtimeGroup = utils.findRoom("Bedroom");
+
+		if(bedtimeGroup){
+
+			_.each(bedtimeGroup.lights, function(light){
+				hue.lights.turnOn(light);
+			});
+
+			configs.state.current.mode = "none";
+
+			resp.json(200);
+		} else {
+			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
+			logger.debug(configs);
+			resp.json(500);
+		}
+
+	}catch(e){
+		log.error();
+		resp.json(500);
+	}
 
 	return next();
 });
