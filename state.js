@@ -13,11 +13,19 @@ module.exports = {
 	},
 	server : {
 		port : 8080,
-		ip_addr : "192.168.1.5"
+		ip_addr : "192.168.1.7"
 	},
 	hue : {
 		portalUrl : "https://www.meethue.com/api/nupnp",
 		baseIp : ""
+	},
+	coment : {
+		defaultRoom : "Living Room",
+		profile : {
+			hue : 65280,
+			sat : 255
+		},
+		speed : 3
 	},
 	weather : {
 		lights : [

@@ -4,14 +4,18 @@ var configs = require("./state");
 var log4js = require("log4js");
 var logger = log4js.getLogger("Rest");
 
-var server = restify.createServer({
-    name : "huey-moods"
-});
+try{
+	var server = restify.createServer({
+	    name : "huey-moods"
+	});
 
-server.pre(restify.pre.sanitizePath());
+	server.pre(restify.pre.sanitizePath());
 
-server.use(restify.queryParser());
-server.use(restify.bodyParser());
+	server.use(restify.queryParser());
+	server.use(restify.bodyParser());
+} catch(e){
+	logger.error("Error while attempting to start rest service");
+}
 
 // server.accepts("application/json");
 

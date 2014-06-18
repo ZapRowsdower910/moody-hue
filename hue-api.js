@@ -165,6 +165,9 @@ var lights = {
 			});
 		},
 		change : function(lightId, stateChange){
+			if(!lightId){
+				return false;
+			}
 			return api.put("/lights/" + lightId + "/state", stateChange).then(function(rsp){
 				return utils.processArrayResp(rsp);
 			});
@@ -322,6 +325,7 @@ var utils = {
 		} else if(err.type == 302){
 			logger.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
 		} else {
+
 			logger.error("unregonized error type.");
 		}
 	},

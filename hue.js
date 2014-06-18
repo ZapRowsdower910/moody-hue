@@ -49,6 +49,7 @@ var logger = log4js.getLogger("Main");
 main = {
 	init : function(){
 		try{
+			logger.info("Starting up moody-hues");
 
 			// load configuration file
 			fileConfigs = JSON.parse( fs.readFileSync('conf.js', encoding="utf-8"));
@@ -165,6 +166,7 @@ main = {
 				clearTimeout(configs.state.current.timers.timesRefresh);
 			},
 			interval : function(){
+				var now = new Date();
 				if(configs.state.times.rolloverTime < now){
 					main.refreshTimes();
 				}
