@@ -1,6 +1,6 @@
 {
   "name": "moody-hues",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Simple home automation rest service for Philips Hue.",
   "main": "hue.js",
   "dependencies" : {
