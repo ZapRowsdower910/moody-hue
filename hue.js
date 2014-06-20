@@ -15,6 +15,7 @@ var hue = require("./hue-api");
 var configs = require("./state");
 var server = require("./rest");
 var pluginManager = require("./pluginManager");
+var utils = require("./utils");
 
 // console.log(configs.general.logging.fileAppender);
 // log4js.configure({
@@ -173,7 +174,7 @@ main = {
 			}
 		}
 	},
-	isDarkOut : function(){
+	isDarkOut : function(){	
 		var now = new Date();
 		if(now < configs.state.times.sunriseEnd){
 			return true;
