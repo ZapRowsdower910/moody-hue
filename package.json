@@ -1,6 +1,6 @@
 {
   "name": "moody-hues",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Simple home automation rest service for Philips Hue.",
   "main": "hue.js",
   "dependencies" : {
@@ -14,7 +14,9 @@
   	"underscore-deep-extend" : "0.0.3",
   	"when" : "3.2.3"
   },
-  "scripts": {},
+  "scripts": {
+    "start" : "node hue.js"
+    },
   "repository": {
     "type": "git",
     "url": "git://github.com/shortRound1911/moody-hue.git"
