@@ -11,3 +11,7 @@ Current plugins:
 - Rooms - Categories lights into rooms. Helps ease apply effects to whole rooms. Enables logging into / out of the house.             Loggin into the house during the day will schedule a configured rooms lights to turn on when sunset starts.
           Loggin out of the house will turn off all the lights and put the service into a sleep mode until login.
 - Weather - Use a light to give a visual forcast.
+
+To install application clone git repository or use 'sudo npm install moody-hues'. Modify the config.js file with the IP address where the rest end point should live.
+
+To start the application: node hue.js
