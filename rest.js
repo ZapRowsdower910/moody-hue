@@ -1,5 +1,4 @@
 var restify = require("restify");
-var io = require("socket.io")(restify);
 var configs = require("./state"); 
 var log4js = require("log4js");
 var logger = log4js.getLogger("Rest");

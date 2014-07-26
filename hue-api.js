@@ -1,4 +1,4 @@
-var needle = require("needle");
+	var needle = require("needle");
 var when = require("when");
 var _ = require("underscore");
 var log4js = require("log4js");
@@ -106,7 +106,9 @@ var api = {
 		return dfd.promise;
 	},
 	isSetup : function(){
-		if(configs.state.current.isSetup == false && !configs.state.current.isScanningForBase){
+		if(!configs.state.current.isSetup 
+			&& !configs.state.current.isScanningForBase)
+		{
 			logger.info("Setting up hue API");
 			configs.state.current.scanningForBase = true;
 			return api.setup();
@@ -199,6 +201,15 @@ var lights = {
 		logger.info("turning light [" +lightId+ "] off");
 		return lights.state.change(lightId, {"on" : false});
 	},
+	toggle : function(lightId){
+		return lights.state.get(lightId).then(function(data){
+			if(data.state.on){
+				return lights.turnOff(lightId);
+			} else {
+				return lights.turnOn(lightId);
+			}
+		});
+	},
 	blink : function(lightId, change, interval){
 		var dfd = when.defer();
 
@@ -287,7 +298,20 @@ var groups = {
 
 var utils = {
 	requestError : function(err){
-		logger.error("Api request resulted in an error", err);
+		// logger.error("Api request resulted in an error", err);
+		utils.apiError(err);
+
+		// If the error is host unreachable and we have an IP address we may have
+		// lost the hub. Try to re-pull the hub's IP address from the web
+		if(err.code == "EHOSTUNREACH"
+			&& configs.hue.baseIp != "")
+		{
+			logger.info("Host unreachable error detected - pulling hubs IP fresh incase hubs IPs addy changed.");
+			// Reset isSetup state
+			configs.state.current.isSetup = false;
+			api.isSetup();	
+		}
+		
 	},
 	apiError : function(err, details){
 		try{
@@ -325,7 +349,6 @@ var utils = {
 		} else if(err.type == 302){
 			logger.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
 		} else {
-
 			logger.error("unregonized error type.");
 		}
 	},

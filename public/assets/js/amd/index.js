@@ -1,0 +1,5 @@
+define(["jquery","socket"],
+	function(){
+
+	}
+);

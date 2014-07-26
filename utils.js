@@ -1,7 +1,9 @@
 var _ = require("underscore");
-var configs = require("./state");
 var log4js = require("log4js");
 var logger = log4js.getLogger("Utils");
+
+var server = require("./");
+var configs = require("./state");
 
 var methods = {
 	converter : {
@@ -41,9 +43,17 @@ var methods = {
 		});
 
 	},
-	requestError : function(){
+	colors : {
+		toXY : function(){
 
+		},
+		toRGB : function(){
 
+		}
+	},
+	restError : function(path, res, e){
+		logger.error("Error while processing request [%s] exception: ", path, e);
+		res.send(500);
 	}
 };
 

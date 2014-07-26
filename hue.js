@@ -3,19 +3,17 @@ var fs = require("fs");
 var _ = require("underscore");
 var log4js = require("log4js");
 
-// Used to deep merge configs
-var deepExt = require("underscore-deep-extend");
-// Wire deepExtend function
-_.mixin({deepExtend: deepExt(_)});
 var sun = require("suncalc");
 var when = require("when");
 
 // local deps
 var hue = require("./hue-api");
 var configs = require("./state");
-var server = require("./rest");
+// var server = require("./rest");
 var pluginManager = require("./pluginManager");
 var utils = require("./utils");
+var express = require('./express');
+var extend = require("./extend");
 
 // console.log(configs.general.logging.fileAppender);
 // log4js.configure({
@@ -54,18 +52,18 @@ main = {
 
 			// load configuration file
 			fileConfigs = JSON.parse( fs.readFileSync('conf.js', encoding="utf-8"));
-		
-			var mergedConfigs = _.deepExtend(configs, fileConfigs);
+
+			var mergedConfigs = extend(true, fileConfigs, configs);
 			configs = mergedConfigs;
 
  			// Start rest server
-			server.listen(configs.server.port, configs.server.ip_addr, function(){
-				logger.info("====================================================");
-				logger.info("=========== [ Starting up REST service ] ===========");
-			    logger.info("=========== [ App %s           ] ===========", server.name);
-				logger.info("=========== [ listening at %s ] ======", server.url );
-				logger.info("====================================================");
-			});
+			// server.listen(configs.server.port, configs.server.ip_addr, function(){
+			// 	logger.info("====================================================");
+			// 	logger.info("=========== [ Starting up REST service ] ===========");
+			//     logger.info("=========== [ App %s           ] ===========", server.name);
+			// 	logger.info("=========== [ listening at %s ] ======", server.url );
+			// 	logger.info("====================================================");
+			// });
 
 			// Setup session objects
 			configs.state = {};

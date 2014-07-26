@@ -9,14 +9,15 @@
 *****/
 
 var _ = require("underscore");
-
-// local deps
-var server = require("../rest");
-var configs = require("../state");
-var hue = require("../hue-api");
-var utils = require("../utils");
 var log4js = require("log4js");
 var logger = log4js.getLogger("Bedtime Plugin");
+
+// local deps
+// var server = require("../rest");
+var configs = require("../state");
+var server = require("../express");
+var hue = require("../hue-api");
+var utils = require("../utils");
 
 var methods = {
 	actions : {
@@ -80,7 +81,7 @@ var methods = {
 *	configs.rooms.definitions
 *
 **/
-server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next){
+server.put('/bedtime/reading', function(req,resp){
 	logger.info("Received /bedtime/reading request");
 	try{
 		var bedtimeGroup = utils.findRoom("Bedroom");
@@ -96,38 +97,38 @@ server.put({path : '/bedtime/reading' , version : '1'} , function(req,resp,next)
 			
 			methods.sleepyTime(bedtimeGroup.lights);
 			configs.state.current.mode = "bedtime";
+			resp.send(200);
 			
 		} else {
 			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
 			logger.debug(configs);
+			resp.send(500);
 		}
 		
-		resp.json(200);
 	} catch (e){
-		logger.error("Error while attempting to go into bedtime mode: ", e);
-		resp.json(500);
-	}
+		// logger.error("Error while attempting to go into bedtime mode: ", e);
+		// resp.json(500);
 
-	return next();
+		utils.restError("/bedtime/reading", resp, e);
+	}
 });
 
-server.put({path : '/bedtime/sleep' , version : '1'} , function(req,resp,next){
+server.put('/bedtime/sleep', function(req,resp){
 	logger.info("Received /bedtime/sleep request");
 	try{
 		
 		methods.sleepyTime();
 		configs.state.current.mode = "sleep";
 		
-		resp.json(200);
+		resp.send(200);
 	} catch (e){
-		logger.error("Error while attempting to go into bedtime mode: ", e);
-		resp.json(500);
+		// logger.error("Error while attempting to go into bedtime mode: ", e);
+		// resp.json(500);
+		utils.restError("/bedtime/sleep", resp, e);
 	}
-
-	return next();
 });
 
-server.put({path : "/bedtime/wakeup"},function(){
+server.put("/bedtime/wakeup",function(req,resp){
 	logger.info("request received /bedtime/wakeup wakeup");
 
 	try{
@@ -142,19 +143,16 @@ server.put({path : "/bedtime/wakeup"},function(){
 
 			configs.state.current.mode = "none";
 
-			resp.json(200);
+			resp.send(200);
 		} else {
 			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
 			logger.debug(configs);
-			resp.json(500);
+			resp.send(500);
 		}
 
 	}catch(e){
-		log.error();
-		resp.json(500);
+		utils.restError("/bedtime/wakeup", resp, e);
 	}
-
-	return next();
 });
 
 module.exports = methods;

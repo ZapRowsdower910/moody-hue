@@ -20,7 +20,8 @@ var logger = log4js.getLogger("Accents");
 // local deps
 var configs = require("../state");
 var hue = require("../hue-api");
-var server = require("../rest");
+// var server = require("../rest");
+var server = require("../express");
 var utils = require("../utils");
 
 var validModes = [
@@ -351,14 +352,20 @@ methods = {
 
 
 // Rest API
-server.put({path:"/accents/start", version : "1"}, function(req, resp, next){
+server.put("/accents/start", function(req, resp){
 	logger.info("Request received to start accents mode");
 	
-	if(configs.state.current.mode != "accents"){
-		methods.start();
-		resp.status(200);
-	} else {
-		logger.info("You're already IN accents mode silly..");
+	try{
+
+		if(configs.state.current.mode != "accents"){
+			methods.start();
+			resp.send(200);
+		} else {
+			logger.info("You're already IN accents mode silly..");
+		}
+
+	} catch(e){
+		utils.restError("/accents/start", resp, e);
 	}
 	
 	return next();

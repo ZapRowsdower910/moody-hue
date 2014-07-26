@@ -19,7 +19,8 @@ var Forecast = require("forecast");
 
 // lcocal deps
 var configs = require("../state");
-var server = require("../rest");
+// var server = require("../rest");
+var server = require("../express");
 var hue = require("../hue-api");
 
 var instance;
@@ -231,13 +232,17 @@ var api = {
 *
 *	@param when - the time frame to return (current, tomorrow, week)
 **/
-server.get({path : '/weather/show/:when', version : '1'}, function(req, resp, next){
-	console.log("request received on /weather/show/:when");
+server.get('/weather/show/:when', function(req, resp){
+	logger.info("request received on /weather/show/:when");
 	
-	var showWhen = req.params.when;
-	api.web.show(showWhen);
-	
-	return next();
+	try{
+		var showWhen = req.params.when;
+		api.web.show(showWhen);
+		resp.send(200);
+	}catch(e){
+		utils.restError("/weather/show/:when", resp, e);
+	}
+
 });
 
 /**
@@ -246,14 +251,17 @@ server.get({path : '/weather/show/:when', version : '1'}, function(req, resp, ne
 *	@param when - the time frame to return (current, tomorrow, week)
 *	@param id - the light bulb to display the results on
 **/
-server.get({path : '/weather/show/:when/:id', version : '1'}, function(req, resp, next){
-	console.log("request received on /weather/show/:when/:id");
+server.get('/weather/show/:when/:id', function(req, resp){
+	logger.info("request received on /weather/show/:when/:id");
+	try{
+		var showWhen = req.params.when;
+		var id = req.params.id
+		api.web.show(showWhen, id);
+		resp.send(200);
+	} catch(e){
+		utils.restError("/weather/show/:when/:id", resp, e);
+	}
 	
-	var showWhen = req.params.when;
-	var id = req.params.id
-	api.web.show(showWhen, id);
-	
-	return next();
 });
 
 module.exports = api;

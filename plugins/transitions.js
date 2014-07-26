@@ -20,7 +20,8 @@ var logger = log4js.getLogger("Transitions");
 // local deps
 var configs = require("../state");
 var hue = require("../hue-api");
-var server = require("../rest");
+// var server = require("../rest");
+var server = require("../express");
 var utils = require("../utils");
 
 var validModes = [
@@ -181,19 +182,17 @@ var methods = {
 *		mid - enable mid saturation mode - uses configuration option configs.transitions.satLevels.mid
 *		heavy - enable heavy saturation mode - uses configuration option configs.transitions.satLevels.heavy
 ***/
-server.put({path:"/transitions/start/:str"}, function(req, res, next){
+server.put("/transitions/start/:str", function(req, res, next){
 	try{
 		var mode = "transitions-" + req.params.str;
 		logger.info("request for /transitions/start received - transition mode ["+mode+"]");
 		configs.state.current.mode = mode;
 		// methods.cycle();
-
-
+		res.status(200);
 	}catch(e){
-		logger.error("Error while attempting start transitions ["+e+"]");
+		// logger.error("Error while attempting start transitions ["+e+"]");
+		utils.restError("/transitions/start/:str", res, e);
 	}
-
-	return next();
 });
 
 module.exports = methods;
