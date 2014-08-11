@@ -3,31 +3,31 @@
 **	Twinkle
 **
 ****/
-var _ = require("underscore");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Twinkle Plugin");
+var _ = require("underscore"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Twinkle Plugin");
 
 // local deps
-var configs = require("../state");
-var server = require("../express");
-var hue = require("../hue-api");
-var utils = require("../utils");
+var session = require("../session"),
+	server = require("../express"),
+	hue = require("../hue-api"),
+	utils = require("../utils"),
+	configs;
 
 var validModes = [
-	"twinkle"
-];
-
-var validLivingColors = [
-	"LST001",	// Light Strips
-	"LLC012"	// Bloom Lamp
-];
-
-var local = {};
+		"twinkle"
+	],
+	validLivingColors = [
+		"LST001",	// Light Strips
+		"LLC012"	// Bloom Lamp
+	],
+	local = {};
 
 var methods = {
 	actions : {
-		init : function(){
+		init : function(conf){
 			local.livinColors = [];
+			configs = conf;
 			// TODO: implement strict mode option
 			// In strict mode only living color lights will be candidates for
 			// being colored
@@ -39,15 +39,15 @@ var methods = {
 		start : function(){
 			logger.info("Starting Twinkle..");
 			try{
-				configs.state.current.mode = "twinkle";
+				session.state.current.mode = "twinkle";
 
 				methods.cycle();
 
-				if(configs.state.current.twinkle == undefined){
-					configs.state.current.twinkle = {};
+				if(session.state.current.twinkle == undefined){
+					session.state.current.twinkle = {};
 				}
 
-				configs.state.current.twinkle.timer = setInterval( 
+				session.state.current.twinkle.timer = setInterval( 
 					methods.cycle,
 					utils.converter.minToMilli(configs.twinkle.cycleTime)
 				);
@@ -57,8 +57,8 @@ var methods = {
 			}
 		},
 		stop : function(){
-			clearInterval(configs.state.current.twinkle.timer);
-			configs.state.current.mode = 'none';
+			clearInterval(session.state.current.twinkle.timer);
+			session.state.current.mode = 'none';
 			logger.info("Twinkle stopped");
 		}
 	},

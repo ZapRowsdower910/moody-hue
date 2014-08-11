@@ -10,31 +10,30 @@
 **			transitions-light - Lightly saturated values. Produces the most light, while still allowing lights to be colored
 ****/
 
-var _ = require("underscore");
-var when = require("when");
-var delay = require("when/delay");
-var log4js = require("log4js");
+var _ = require("underscore"),
+	when = require("when"),
+	delay = require("when/delay"),
+	log4js = require("log4js");
 
 var logger = log4js.getLogger("Transitions");
 
 // local deps
-var configs = require("../state");
-var hue = require("../hue-api");
-// var server = require("../rest");
-var server = require("../express");
-var utils = require("../utils");
+var session = require("../session"),
+	hue = require("../hue-api"),
+	server = require("../express"),
+	utils = require("../utils"),
+	configs;
 
 var validModes = [
-	"transitions",
-	"transitions-light",
-	"transitions-mid",
-	"transitions-heavy",
-	"home"
-];
-
-var timers = {
-	cycles : null
-};
+		"transitions",
+		"transitions-light",
+		"transitions-mid",
+		"transitions-heavy",
+		"home"
+	],
+	timers = {
+		cycles : null
+	};
 
 var methods = {
 	actions : {
@@ -61,26 +60,27 @@ var methods = {
 			clearInterval(timers.cycle);
 			timers.cycle = null;
 		},
-		init : function(){
+		init : function(conf){
 			logger.info("Initializing transitions plugin");
-			configs.state.current.transitions = {};
-			configs.state.current.transitions.hue = 0;
+			configs = conf;
+			session.state.current.transitions = {};
+			session.state.current.transitions.hue = 0;
 			methods.actions.start();
 		}
 	},
 	cycle : function(){
-		if(validModes.indexOf(configs.state.current.mode) > -1){
-			var room = configs.state.current.transitions.currentRoom;
+		if(validModes.indexOf(session.state.current.mode) > -1){
+			var room = session.state.current.transitions.currentRoom;
 			// If no room has been initialized, grab the defualt config
 			if(room == undefined){
 				// TODO: consider pulling the first room deff if default value is missing
-				room = configs.rooms.definitions[configs.transitions.defaultRoom];
-				configs.state.current.transitions.currentRoom = room;
+				room = configs.rooms[configs.transitions.defaultRoom];
+				session.state.current.transitions.currentRoom = room;
 			}
 			logger.info("Starting transitions");
 			methods.prepareChange(room);
 		} else {
-			logger.debug("Invalid state for transitions [" + configs.state.current.mode + "] valid ["+validModes+"]");
+			logger.debug("Invalid state for transitions [" + session.state.current.mode + "] valid ["+validModes+"]");
 		}
 	},
 	prepareChange : function(room){
@@ -116,14 +116,14 @@ var methods = {
 	changeColor : function(room){
 		
 		_.each(room.lights, function(lightId){
-			var hueSet = configs.state.current.transitions.hue;
+			var hueSet = session.state.current.transitions.hue;
 			var thisHue = utils.randomNumber(hueSet, (hueSet + configs.transitions.colorSlide));
 			// The hue value maxes out, if its greater than 65535 we want to wrap back to 0
 			if(thisHue > 65535){
 				thisHue = utils.randomNumber(0, configs.transitions.colorSlide);
 			}
 			// Update current color config
-			configs.state.current.transitions.hue = thisHue;
+			session.state.current.transitions.hue = thisHue;
 
 			if(configs.transitions.brightness.bright > 255){
 				configs.transitions.brightness.bright = 255;
@@ -131,7 +131,7 @@ var methods = {
 			var bri = utils.randomNumber(configs.transitions.brightness.dim, 
 				configs.transitions.brightness.bright);
 
-			var level = utils.getModeLevel(configs.state.current.mode);
+			var level = utils.getModeLevel(session.state.current.mode);
 			var sat = 50;
 			if(level == "light"){
 				sat = utils.randomNumber(configs.transitions.satLevels.light[0],
@@ -186,7 +186,7 @@ server.put("/transitions/start/:str", function(req, res, next){
 	try{
 		var mode = "transitions-" + req.params.str;
 		logger.info("request for /transitions/start received - transition mode ["+mode+"]");
-		configs.state.current.mode = mode;
+		session.state.current.mode = mode;
 		// methods.cycle();
 		res.status(200);
 	}catch(e){

@@ -54,11 +54,7 @@
 
       <div class="wpr">
         <div class="room-menu pull-left">
-          <ul class="nav nav-pills nav-stacked">
-            <li class="pill active">Lorem ipsum dolor</li>
-            <li class="pill">sit amet, consectetur</li>
-            <li class="pill fillcolor">adipiscing elit</li>
-          </ul>
+          <ul class="nav nav-pills nav-stacked"></ul>
         </div>
 
         <div class="room-display pull-left">
@@ -67,7 +63,7 @@
 
             <div class="light-menu">
                <ul class="nav nav-pills nav-stacked">
-                <li class="pill on">Turn On</li>
+                <li class="pill on" data-action="toggle-state">Turn On</li>
                 <li class="pill">Other Stuff</li>
               </ul>
             </div>
@@ -76,15 +72,21 @@
           <div class="room-controls">
             <ul class="list-inline">
               <li><button name="updateStatus" type="button" class="btn update-status">Update Status</button></li> 
+              <li>
             </ul>
           </div>
         </div> <!-- /.room-dispay -->
+
+        <div class="room-details pull-left">
+          <ul class="nav nav-pills nav-stacked"><li>something</li></ul>
+        </div>
+
         <div class="clearfix"></div>
       </div>
 
     </div><!-- /.container -->
 
-    <script data-main="/assets/js/autoloader" src="/assets/js/require.js"></script>
+    <script data-main="/assets/js/autoloader" data-page="index" src="/assets/js/require.js"></script>
 
     <script type="text/javascript">
 

@@ -1,5 +1,6 @@
 define(["jquery","socket"],
-	function(){
+	function($, socket){
 
+		
 	}
 );

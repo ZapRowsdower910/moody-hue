@@ -1,11 +1,13 @@
-var _ = require("underscore");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Utils");
+var _ = require("underscore"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Utils");
 
-var server = require("./");
-var configs = require("./state");
+var configs;
 
 var methods = {
+	init : function(conf){
+		configs = conf;
+	},
 	converter : {
 		minToMilli : function(mins){
 			return ((mins * 60) * 1000);
@@ -36,7 +38,7 @@ var methods = {
 		return original;
 	},
 	findRoom : function(roomName){
-		return _.find(configs.rooms.definitions, function(v,i){
+		return _.find(configs.rooms, function(v,i){
 			if(v.name == roomName){
 				return v;
 			}

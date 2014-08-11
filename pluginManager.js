@@ -1,12 +1,14 @@
-var _ = require("underscore");
-var fs = require("fs");
-var when = require("when");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Plugin Manager");
+var _ = require("underscore"),
+	fs = require("fs"),
+	when = require("when"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Plugin Manager"),
+	configs;
 
 var methods = {
-	init : function(){
+	init : function(conf){
 		logger.info("Initializing Plugin Manager");
+		configs = conf;
 		methods.getDir("plugins").then(function(files){
 			logger.info("files currently in folder ["+files+"]");
 			_.each(files, function(file){
@@ -39,7 +41,7 @@ var methods = {
 
 		if(plugin){
 			try{
-				plugin.actions.init();
+				plugin.actions.init(configs);
 			} catch(e){
 				logger.debug("Failed to fire init event on plugin ["+file+"] due to ["+e+"]");
 			}	

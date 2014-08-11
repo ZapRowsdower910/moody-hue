@@ -4,14 +4,53 @@
 }
 
 .wpr{margin-top:50px; padding-top:25px;}
-.room-menu ul li{ border:1px solid #222; width:250px;background-color:#444; color:#fff;}
-.room-menu ul li:hover:not(.active){ background-color:#f1f1f1; color:#000; cursor:pointer; }
-.room-menu ul li.active{background-color:#fff;color:#000;border-right:0; border-top-right-radius: 0; border-bottom-right-radius: 0;}
+.room-menu {width:135px;}
+.room-menu ul li{ 
+	border:1px solid #222; 
+	background-color:#444; 
+	color:#fff;
+}
+.room-menu ul li:hover:not(.active){ 
+	background-color:#f1f1f1; 
+	color:#000; 
+	cursor:pointer; 
+}
+.room-menu ul li.active{
+	background-color:#fff;
+	color:#000;
+	border-right:0; 
+	border-top-right-radius: 0; 
+	border-bottom-right-radius: 0;
+}
 .renderBoxWpr{position:relative;}
 #renderBox{background-color:#000;}
-.room-display{border:1px solid black;width:850px;height:500px;}
-.light-menu{font-family:"space"; font-size:1.7em;display:none; position:absolute; top:0; left:0;width:200px;}
-.light-menu ul li{border:1px solid black;background-color:#fff;}
-.light-menu ul li:hover{background-color:#666; color:#fff;cursor:pointer;}
+.room-display{
+	border:1px solid black;
+	width:850px;
+	height:500px;
+}
+.light-menu{
+	font-family:"space"; 
+	font-size:1.7em;
+	display:none; 
+	position:absolute; 
+	top:0; 
+	left:0;
+	width:200px;
+}
+.light-menu ul li{
+	border:1px solid black;
+	background-color:#fff;
+}
+.light-menu ul li:hover{
+	background-color:#666; 
+	color:#fff;
+	cursor:pointer;
+}
+
+.room-details{width:150px;}
+.room-details ul li{border:1px solid #222;}
+
+.conf-block{border:1px solid blue;}
 
 .pill{padding:4px 10px;  border-radius: 22px;}

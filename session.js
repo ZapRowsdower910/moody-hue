@@ -1,41 +1,35 @@
-var session = {
+var app = {
 	current : {
 		mode : "transitions-mid",
 		profile : "none",
 		rolloverTime : undefined,
 		// isSetup : false
-	},
-	web : {
-		rooms : {
-			lights : [
+	}
+};
+var web = {
+	rooms : [
+		{
+			"name" : "Living Room",
+			"lights" : [
+				{"id" : 1},
+				{"id" : 2},
+				{"id" : 3},
+				{"id" : 4},
+				{"id" : 5}
+			]
+		},
+		{
+			"name" : "Bedroom",
+			"lights" : [
 				{
-					id : 1,
-					x : 20,
-					y : 50
-				},
-				{
-					id : 2,
-					x : 120,
-					y : 50
-				},
-				{
-					id : 3,
-					x : 220,
-					y : 50
-				},
-				{
-					id : 4,
-					x : 320,
-					y : 50
-				},
-				{
-					id : 5,
-					x : 420,
-					y : 50
+					"id" : 6,
+					"x" : 50,
+					"y" : 50
 				}
 			]
 		}
-	}
+	]
 };
 
-module.exports = session;
+exports.state = app;
+exports.web = web;

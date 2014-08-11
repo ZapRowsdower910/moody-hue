@@ -1,3 +1,4 @@
+// Node Modules
 var express = require("express"),
 	_ = require("underscore"),
 	when = require("when"),
@@ -5,29 +6,37 @@ var express = require("express"),
 
 	logger = log4js.getLogger("Express");
 
+// Local Modules
 var hue = require("./hue-api"),
-	configs = require("./state");
+	session = require("./session"),
+	extend = require("./extend"),
+	configManager = require("./configManager"),
+	configs;
 
+// Local vars
 var app = express(),
 	http = require("http").createServer(app),
-	// bodyParser = require("body-parser"),
-
-	server = http.listen(8080, "192.168.1.7", function(){
-		logger.info("====================================================");
-		logger.info("=========== [ Starting up Web service ] ============");
-	    logger.info("=========== [ IP: %s         ] ===========", server.address().address);
-		logger.info("=========== [ listening on port: %s ] ============", server.address().port );
-		logger.info("====================================================");
-	});
-
-var	io = require("socket.io").listen(http);
-// io.listen(3001);
+	io = require("socket.io").listen(http);
 
 // Path to our public directory
 var pub = __dirname + '/public';
 
 app.use(express.static(pub));
 // app.use(express.bodyParser());
+
+// Custom methods
+app.hueInit = function(conf){
+	configs = conf;
+
+	server = http.listen(configs.server.port, configs.server.ip_addr, function(){
+		logger.info("====================================================");
+		logger.info("=========== [ Starting up Web service ] ============");
+	    logger.info("=========== [ IP: %s         ] ===========", server.address().address);
+		logger.info("=========== [ listening on port: %s ] ============", server.address().port );
+		logger.info("====================================================");
+	});
+};
+
 
 /****			*******
 **	Rest End Points  **
@@ -40,7 +49,7 @@ app.put('/change/mode/:newmode', function(req, resp){
 	try{
 		var newMode = req.params.newmode;
 		logger.info("change mode request received. Changing mode to ["+newMode+"]");
-		configs.state.current.mode = newMode;
+		session.state.current.mode = newMode;
 		resp.send(200);
 	} catch(e){
 		logger.error("Error while processing request: ", e);
@@ -56,7 +65,7 @@ app.get('/current/mode', function(req, resp){
 
 	try{
 		resp.setHeader('Content-Type', 'application/json');
-		resp.send(200, {"mode" : configs.state.current.mode});
+		resp.send(200, {"mode" : session.state.current.mode});
 	}catch(e){
 		logger.error("Error while processing request: ", e);
 		resp.send(500);
@@ -78,78 +87,119 @@ app.get('/settings', function(req,rsp){
 /****	   *******
 **	Socket.io 	**
 *****		******/
-var statusRefresh = setInterval(
-	function(){
 
-		var lightData = [];
-		var prmsCollection = [];
+//
+// pages/index
+//
+var index = io.of("/pages/index");
 
-		var roomLights = configs.rooms.definitions[0].lights;
-		_.each(roomLights, function(v,i){
-			var prms = hue.lights.state.get(v).then(function(data){
-				lightData.push(data)
-			});
+index.on('connection', function (socket) {
+	logger.info("New client connection established on /index");
 
-			prmsCollection.push(prms);
-		});
+    socket.on("join room", function(room,fn){
+    	logger.info("join room request received. Joining room: ",room.name);
 
-		when.all(prmsCollection).then(function(){
-			io.emit("update room state", lightData);	
-		});
-		
-	},
-	5000
-);
+    	var room = _.find(configs.rooms, function(v,i){
+    		return v.name == room.name;
+    	});
 
-io.on('connection', function (socket) {
-	logger.info("New client connection established");
-
-	
-	
-    socket.on("set room", function(data,fn){
-    	logger.info("set room request received");
-    	fn(configs.state.web.rooms.lights);
+    	// if were in a room - leave it
+    	if(socket.room){
+    		socket.leave(socket.room);	
+    	}
+    	
+    	// Join room
+    	socket.join(room.name);
+    	// Set sockets room
+    	socket.room = room.name;
+    	fn(room);
     });
 
 	socket.on("move light", function (data){
 		logger.info("received data on request 'move light': ",data);
-		var lites = configs.state.web.rooms.lights;;
-		var index = _.find(lites, function(v,i){
-			return (v.id == data.id);
-		});
 
-		if(index){
-			index.x = data.x;
-			index.y = data.y;
+		if(data){
+			var room = utils.findRoom(socket.room);
+
+			var index = _.find(room.lights, function(v,i){
+				return (v.id == data.id);
+			});
+
+			if(index){
+				index.x = data.x;
+				index.y = data.y;
+
+				logger.info("Rooms: ",JSON.stringify(configs.rooms));
+
+				configManager.scheduler.save(configs);
+
+				socket.broadcast.to(socket.room).emit("update light position", index);
+			}
 		}
-		socket.emit("update room state", configs.state.web.rooms.lights);
 	});
 
 	socket.on("light toggle", function(light,fn){
-		hue.lights.toggle(light.id).then(function(){
-			fn("ok");
+		hue.lights.toggle(light.id).then(function(state){
+			// fn(state);
+			// TODO: broadcast toggle event to all clients
+			// socket.broadcast.to(socket.room).emit("");
 		});
 	});
 
-	io.on("get rooms", function(data, fn){
+	socket.on("get rooms", function(data, fn){
 		logger.info("socket request 'get rooms' received");
-		console.log(configs.rooms.definitions, arguments);
-		fn(configs.rooms.definitions);
+		// console.log(configs.rooms, arguments);
+		fn(configs.rooms);
 	});
 
-	socket.on("get settings", function(d, fn){
-		fn(configs);
+	socket.on("change bri", function(data,fn){
+		logger.info("change bri req", data);
+
+		hue.lights.state.change(data.id, {"bri":data.bri}).then(fn)
 	});
 
 	socket.on("disconnect", function(){
-		console.log("Client dropped");
+		logger.info("Client dropped");
 	});
 
 	socket.on("reconnect", function(){
-		console.log("Client reconnected");
+		logger.info("Client reconnected");
 	});
+
+	var statusRefresh = setInterval(
+		function(){
+
+			var lightData = [];
+			var prmsCollection = [];
+
+			var room = utils.findRoom(socket.room);
+			_.each(room.lights, function(v,i){
+				var prms = hue.lights.state.get(v.id).then(function(data){
+					lightData.push(data)
+				});
+
+				prmsCollection.push(prms);
+			});
+
+			when.all(prmsCollection).then(function(){
+				// logger.info("Emitting update room state", lightData, room);
+				socket.broadcast.to(socket.room).emit("update room state", lightData);	
+			});
+			
+		},
+		5000
+	);
 });
 
 
+//
+//	pages/settings
+//
+var settings = io.of("/pages/settings");
+settings.on("connection", function(socket){
+	logger.info("Client connected to /settings");
+
+	socket.emit("load configs", configs);
+});
 
 module.exports = app;

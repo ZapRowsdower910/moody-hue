@@ -1,18 +1,20 @@
-var _ = require("underscore");
-var when = require("when");
-var delay = require("when/delay");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Coment");
+var _ = require("underscore"),
+	when = require("when"),
+	delay = require("when/delay"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Coment");
 
-var hue = require("../hue-api");
+var hue = require("../hue-api"),
 // var server = require("../rest");
-var server = require("../express");
-var configs = require("../state");
-var utils = require("../utils");
+	server = require("../express"),
+	utils = require("../utils"),
+	configs;
 
 var methods = {
 	actions : {
-		init : function(){},
+		init : function(conf){
+			configs = conf;
+		},
 		start : function(){},
 		stop : function(){}
 	},

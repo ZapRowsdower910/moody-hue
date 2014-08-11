@@ -13,24 +13,23 @@
 **		- week - The current weather prediction of the overall week
 **
 *******/
-var when = require("when");
-var _ = require("underscore");
-var Forecast = require("forecast");
+var when = require("when"),
+	_ = require("underscore"),
+	Forecast = require("forecast");
 
 // lcocal deps
-var configs = require("../state");
-// var server = require("../rest");
-var server = require("../express");
-var hue = require("../hue-api");
+var server = require("../express"),
+	hue = require("../hue-api"),
+	configs;
 
-var instance;
-var timers = {};
+var instance,
+	timers = {};
 
 
 var api = {
 	actions : {
-		init : function(){
-	
+		init : function(conf){
+			configs = conf;
 			instance = new Forecast({
 				service : "forecast.io",
 				key : "df4d170ea01fc3a0cb9ab53d8cefd8b5",

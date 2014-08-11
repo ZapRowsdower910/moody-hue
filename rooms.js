@@ -1,26 +1,39 @@
-var _ = require("underscore");
-var when = require("when");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Rooms");
+/***
+**	 v 0.0.1
+**
+** 		A plugin to control hue lights by defined rooms. The intention of this plugin is to make it easier to
+**		apply effects to an entire room.
+** 
+** 		Room definitions are defined in configurations under configs.rooms
+** 		A room is comprised of a name and an array of light Id's
+** 
+** 		Error Numbers
+** 			- 100 - Indicates an invalid room argument
+***/
 
-var hue = require("./hue-api");
-// var server = require("./rest");
-var server = require("./express");
-var configs = require("./state");
-var utils = require("./utils");
+var _ = require("underscore"),
+	when = require("when"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Rooms");
 
+var hue = require("./hue-api"),
+	server = require("./express"),
+	// server = require("./rest"),
+	session = require("./session"),
+	utils = require("./utils"),
+	configs;
 
 var timers = {};
 
 var methods = {
-	init : function(){
+	init : function(conf){
 		// init stuff
-		
+		configs = conf;
 	},
 	checkTime : function(){
 		var now = new Date();
-		logger.debug("Current time ["+now+"] - sunset is at ["+configs.state.times.sunsetStart+"] compare result ["+now > configs.state.times.sunsetStart+"]");
-		if(now > configs.state.times.sunsetStart){
+		logger.debug("Current time ["+now+"] - sunset is at ["+session.state.times.sunsetStart+"] compare result ["+now > session.state.times.sunsetStart+"]");
+		if(now > session.state.times.sunsetStart){
 			return true;
 		} else {
 			return false;
@@ -70,10 +83,11 @@ var methods = {
 
 			var change = {on:false};
 			var lightRsp = hue.lights.state.changeSet(lights,change);
+			
 			when.all(lightRsp).then(function(){
 				logger.info("Let darkness reign! Room has been turned off.");
 			}, function(err){
-				logger.error("One of the lights failed to turn on! ["+err+"]")
+				logger.error("One of the lights failed to turn off! ["+err+"]")
 			});
 		}
 
@@ -111,7 +125,7 @@ var methods = {
 
 		if(state == "in"){
 			logger.info("Log in request detected.");
-			configs.state.current.mode = "home";
+			session.state.current.mode = "home";
 
 			if(methods.checkTime()){
 				methods.roomControl.turnOn(configs.rooms.homeLights);
@@ -120,7 +134,7 @@ var methods = {
 				blinkChange.hue = configs.rooms.status.colors.welcome;
 				hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
 			} else { 
-				logger.info("Not late enough for lights yet.");
+				console.log("Not late enough for lights yet.");
 				methods.sunsetWatcher.start();
 
 				// Display command status
@@ -131,7 +145,7 @@ var methods = {
 
 		} else if(state == "out"){			
 			logger.info("Goodbye! I'll just shut off lights for ya..")
-			configs.state.current.mode = "notHome";
+			session.state.current.mode = "notHome";
 
 			methods.roomControl.turnOff(configs.rooms.homeLights);
 
@@ -150,16 +164,42 @@ var methods = {
 		}
 
 	},
-	illum : function(room){
+	toggleRoom : function(room, toggle){
 
 		var roomDef = utils.findRoom(room);
 
 		if(roomDef == undefined){
 			throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
 		}
-		methods.roomControl.turnOn(roomDef.lights);
+		
+		if(toggle == true){
+			methods.roomControl.turnOn(roomDef.lights);
+		} else if(toggle == false){
+			methods.roomControl.turnOff(roomDef.lights);
+		} else {
+			logger.error("Invalid toggle value ["+toggle+"] boolean values must be used");
+		}
+		
+	},
+	validateApiRequest : function(req,resp){
+		var room = req.params.room;
+		logger.info("possible room ["+room+"]");
+		// Attempt to find room
+		var roomDef = utils.findRoom(room);
+		
+		if(roomDef != undefined || roomDef == ""){
+			resp.send(200);
+			return roomDef;
+		} else {
+			resp.send(500, {"error":100, "desc":"invalid room"});
+			if(roomDef == undefined){
+				throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
+			}
+		}
+		
 	}
 };
+console.log(server)
 
 /**
 * Valid states are 
@@ -172,81 +212,52 @@ server.put('/rooms/log/:state', function(req, resp){
 	try{
 	
 		methods.home(req.params.state);
-		resp.send(200);
+		resp.status(200);
 	
 	} catch(e){
-		// logger.error("error while attempting to process a home event",e);
-		// resp.send(500);
-		utils.restError("/rooms/log/:state", resp, e);
+		logger.error("error while attempting to process a home event",e);
+		resp.status(500);
 	}
 });
 
-server.put("/rooms/light/:room",function(req,resp){
-	logger.info("request received for /rooms/light");
-
+server.put('/rooms/illuminate/:room',function(req,resp){
+	logger.info("request received for /rooms/illuminate");
+	
 	try{
-		var room = req.params.room;
-		logger.info("possible room ["+room+"]");
-		if(room != undefined || room != ""){
-			methods.illum(room);
-			resp.send(200);
-		} else {
-			resp.send(500, {"error":100, "desc":"invalid room"});
-		}
+		var room = methods.validateApiRequest(req, resp);
+		methods.toggleRoom(room, true);
 	} catch(e){
-		// logger.error("error lighting room",e);
-		// resp.send(500);
-		utils.restError("/rooms/light/:room", resp, e);
+		logger.error("error illuminating room ",e);
+		resp.status(500);
 	}
 });
 
-server.put("/rooms/darken/:room",function(req,resp){
+server.put('/rooms/darken/:room',function(req,resp){
 	logger.info("request received for /rooms/darken");
 
 	try{
-		var room = req.params.room;
-		logger.info("possible room ["+room+"]");
-		if(room != undefined || room != ""){
-			var roomDef = utils.findRoom(room);
-
-			if(roomDef == undefined){
-				throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
-			}
-			methods.roomControl.turnOff(roomDef.lights);
-			resp.send(200);
-		} else {
-			resp.send(500, {"error":100, "desc":"invalid room"});
-		}
+		var room = methods.validateApiRequest(req, resp);
+		methods.toggleRoom(room, false);
 	} catch(e){
-		// logger.error("error darkenin' room",e);
-		// resp.send(500);
-		utils.restError("/rooms/darken/:room", resp, e);
+		logger.error("error darken-ing(..?) room ",e);
+		resp.status(500);
 	}
+	
 });
 
-server.put("/rooms/change/:room",function(req,resp){
+
+server.put('/rooms/change/:room',function(req,resp){
 	logger.info("request received for /rooms/change");
+	
 	try{
-		var room = utils.findRoom(req.params.room);
+		var room = methods.validateApiRequest(req, resp);
 		var body = JSON.parse(req.body);
-		
-		if(room != undefined || room != ""){
-			methods.roomControl.change(room, body);
-			resp.send(200);
-		} else {
-			logger.error("room was empty or undefined ");
-			resp.send(500, {"error":100, "desc":"invalid room"});
-		}
+		methods.change(room, body);
 	} catch(e){
-		// logger.error("error illuminating room",e);
-		// resp.send(500);
-		utils.restError("/rooms/change/:room", resp, e);
+		logger.error("error changing room ",e);
+		resp.status(500);
 	}
-});
-
-server.get('rooms', function(req, resp, next){
-	console.log("gettin rooms");
-	hue.lights.state.isOn(2);
+	
 });
 
 module.exports = methods;

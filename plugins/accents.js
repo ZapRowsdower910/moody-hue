@@ -10,42 +10,40 @@
 **			- accents-
 ****/
 
-var _ = require("underscore");
-var when = require("when");
-var delay = require("when/delay");
-var log4js = require("log4js");
+var _ = require("underscore"),
+	when = require("when"),
+	delay = require("when/delay"),
+	log4js = require("log4js");
 
 var logger = log4js.getLogger("Accents");
 
 // local deps
-var configs = require("../state");
-var hue = require("../hue-api");
-// var server = require("../rest");
-var server = require("../express");
-var utils = require("../utils");
+var session = require("../session"),
+	hue = require("../hue-api"),
+	server = require("../express"),
+	utils = require("../utils"),
+	configs;
 
 var validModes = [
 	"accents",
 	"accents-bright",
 	"home"
-];
-
-var validBrightLights = [
-	"Extended color light"
-];
-
-var timers = {};
-
-var data = {};
+	],
+	validBrightLights = [
+		"Extended color light"
+	],
+	timers = {},
+	data = {};
 
 methods = {
 	actions : {
-		init : function(){
+		init : function(conf){
 			logger.info("Attempting to startup Accents");
 
 				try{
-					configs.state.accents = {};
-					configs.state.current.accents = {};
+					configs = conf;
+					session.state.accents = {};
+					session.state.current.accents = {};
 
 					// convert minutes to seconds
 					configs.accents.timer = utils.converter.minToMilli(configs.accents.timer);
@@ -65,12 +63,12 @@ methods = {
 					methods.buildActiveGroups();
 
 					// Find the default room
-					configs.state.accents.defaultRoom = _.find(configs.rooms.definitions, function(v){
+					session.state.accents.defaultRoom = _.find(configs.rooms, function(v){
 						return v.name == configs.accents.defaultRoom;
 					});
 					
-					logger.debug("Default room set to ["+configs.state.accents.defaultRoom.name+"]");
-					configs.state.current.accents.room = configs.state.accents.defaultRoom;
+					logger.debug("Default room set to ["+session.state.accents.defaultRoom.name+"]");
+					session.state.current.accents.room = session.state.accents.defaultRoom;
 
 				} catch (e){
 					logger.error("Exception while attempting to init Accents", e);
@@ -80,7 +78,7 @@ methods = {
 		start : function(){
 			logger.info("Enabling Accent mode");
 			// lock in our mode
-			configs.state.current.mode = "accents-bright";	
+			session.state.current.mode = "accents-bright";	
 			
 			// Start change immedately
 			methods.startChange();
@@ -99,7 +97,7 @@ methods = {
 		},
 		stop : function(){
 			logger.info("Disabling Accent mode");
-			configs.state.current.mode = "none";
+			session.state.current.mode = "none";
 			
 			clearTimer(timers.accents);
 			
@@ -132,15 +130,15 @@ methods = {
 	},
 	startChange : function(){
 		try{
-			if(validModes.indexOf(configs.state.current.mode) > 0){
+			if(validModes.indexOf(session.state.current.mode) > 0){
 
 				var now = new Date();
-				if((configs.accents.waitForDark && now < configs.state.times.sunriseEnd )
-					|| (configs.accents.waitForDark && now > configs.state.times.sunsetStart)
+				if((configs.accents.waitForDark && now < session.state.times.sunriseEnd )
+					|| (configs.accents.waitForDark && now > session.state.times.sunsetStart)
 					|| !configs.accents.waitForDark)
 				{
 					logger.info("Looks like its dark enought for Accents mode. Starting accent cycle.");
-					if(configs.state.times.rolloverTime < now){
+					if(session.state.times.rolloverTime < now){
 						main.refreshTimes();
 					}
 					
@@ -150,10 +148,10 @@ methods = {
 					methods.changeProfile(currentProfile, nextProfile);
 
 				} else {
-					logger.debug("Not dark enough for accents. Accents will start at ["+configs.state.times.sunsetStart+"]");
+					logger.debug("Not dark enough for accents. Accents will start at ["+session.state.times.sunsetStart+"]");
 				}
 			} else {
-				logger.info("Invalid state of ["+configs.state.current.mode+"] unable to start accents");
+				logger.info("Invalid state of ["+session.state.current.mode+"] unable to start accents");
 			}
 		} catch(e){
 			logger.error("error while attempting to change accents", e);
@@ -178,7 +176,7 @@ methods = {
 			logger.info("Changing Accent light to profile ["+nextProfile.name+"] using group ["+nextProfile.group+"] to [", change, "]");
 			methods.syncLights(currentProfile, nextProfile, change).done(function(){
 				logger.info("profile change complete");
-				configs.state.current.profile = nextProfile.group;
+				session.state.current.profile = nextProfile.group;
 			});
 		} catch(e){
 			logger.info("error while trying to change profile: ", e);
@@ -190,7 +188,7 @@ methods = {
 		var nextProfileLights = _.clone(nextProfile.lights);
 		var briLight = -1;
 		// Turn on one light from the room for light
-		var lightsNotInUse = _.difference(configs.state.current.accents.room.lights, nextProfile.lights);
+		var lightsNotInUse = _.difference(session.state.current.accents.room.lights, nextProfile.lights);
 		logger.info("Lights in room not being used by current active profile ["+lightsNotInUse+"]");
 		if(lightsNotInUse.length){
 			logger.debug("Total number of lights to choose from ["+lightsNotInUse.length+"]");
@@ -205,7 +203,7 @@ methods = {
 
 		// Turn off lights that are no longer needed
 		// if(currentProfile != undefined){
-			var roomLights = configs.state.current.accents.room.lights;
+			var roomLights = session.state.current.accents.room.lights;
 			console.log("The current rooms light configuration ["+roomLights+"]");
 			var onList = [];
 			var dfdList = []
@@ -291,11 +289,11 @@ methods = {
 		});
 	},
 	getNextProfile : function(){
-		if(configs.state.current.profile == 'none'){
+		if(session.state.current.profile == 'none'){
 			return data.mergedProfiles[0];
 		} else {
 			// find next in line
-			logger.info("looking for next profile. current profile [" + configs.state.current.profile + "]");
+			logger.info("looking for next profile. current profile [" + session.state.current.profile + "]");
 			var group = methods.getCurrentProfile();
 			// If group wasn't found in available profiles, default to first available
 			if(group == undefined){
@@ -316,7 +314,7 @@ methods = {
 	},
 	getCurrentProfile : function(){
 		return _.find(data.mergedProfiles, function(profile){
-			if(profile.group == configs.state.current.profile){
+			if(profile.group == session.state.current.profile){
 				return profile;
 			}
 		});
@@ -327,7 +325,7 @@ methods = {
 		logger.debug("Random candidate ["+rnd+"]");
 		// Accent-bright requires a certian brightness of bulb to make sure the room is
 		// still somewhat light
-		if(configs.state.current.mode = "accents-bright"){
+		if(session.state.current.mode = "accents-bright"){
 			hue.lights.state.get(lightArray[rnd]).then(function(state){
 				logger.debug("type of [",state.type,"]")
 				var validLight = validBrightLights.indexOf(state.type);
@@ -357,7 +355,7 @@ server.put("/accents/start", function(req, resp){
 	
 	try{
 
-		if(configs.state.current.mode != "accents"){
+		if(session.state.current.mode != "accents"){
 			methods.start();
 			resp.send(200);
 		} else {

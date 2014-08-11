@@ -1,5 +1,5 @@
-define(["kinetic"],
-	function(){
+define(["jquery","kinetic"],
+	function($){
 		
 		methods.init();
 
@@ -11,6 +11,10 @@ var canvas = {};
 
 var methods = {
 	init : function(){
+
+    var box = $('#renderBox');
+
+    if(box.length){
       canvas.stage = new Kinetic.Stage({
         container: "renderBox",
         width: 850,
@@ -20,4 +24,5 @@ var methods = {
       canvas.layer = new Kinetic.Layer();
       canvas.stage.add(canvas.layer);
     }
+  }
 };

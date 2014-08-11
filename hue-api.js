@@ -1,11 +1,13 @@
-	var needle = require("needle");
-var when = require("when");
-var _ = require("underscore");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Hue-Api");
+var needle = require("needle"),
+	when = require("when"),
+	_ = require("underscore"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Hue-Api");
 
 // local deps
-var configs = require("./state");
+var configManager = require("./configManager"),
+	session = require("./session"),
+	configs;
 
 var api = {
 	get : function(path){
@@ -89,8 +91,8 @@ var api = {
 				if((rsp != undefined && rsp.length) && (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != "")){
 					configs.hue.baseIp = rsp[0].internalipaddress;
 					logger.info("Found local server ["+configs.hue.baseIp+"]");
-					configs.state.current.isScanningForBase = false;
-					configs.state.current.isSetup = true;
+					session.state.current.isScanningForBase = false;
+					session.state.current.isSetup = true;
 					
 					dfd.resolve();
 				} else {
@@ -106,11 +108,11 @@ var api = {
 		return dfd.promise;
 	},
 	isSetup : function(){
-		if(!configs.state.current.isSetup 
-			&& !configs.state.current.isScanningForBase)
+		if(!session.state.current.isSetup 
+			&& !session.state.current.isScanningForBase)
 		{
 			logger.info("Setting up hue API");
-			configs.state.current.scanningForBase = true;
+			session.state.current.scanningForBase = true;
 			return api.setup();
 		}
 		return true;
@@ -202,13 +204,20 @@ var lights = {
 		return lights.state.change(lightId, {"on" : false});
 	},
 	toggle : function(lightId){
-		return lights.state.get(lightId).then(function(data){
+		var dfd = when.defer();
+		lights.state.get(lightId).then(function(data){
 			if(data.state.on){
-				return lights.turnOff(lightId);
+				lights.turnOff(lightId).then(function(){
+					dfd.resolve(false);
+				});
 			} else {
-				return lights.turnOn(lightId);
+				lights.turnOn(lightId).then(function(){
+					dfd.resolve(true);
+				});
 			}
 		});
+
+		return dfd.promise;
 	},
 	blink : function(lightId, change, interval){
 		var dfd = when.defer();
@@ -308,7 +317,7 @@ var utils = {
 		{
 			logger.info("Host unreachable error detected - pulling hubs IP fresh incase hubs IPs addy changed.");
 			// Reset isSetup state
-			configs.state.current.isSetup = false;
+			session.state.current.isSetup = false;
 			api.isSetup();	
 		}
 		
@@ -371,9 +380,16 @@ var utils = {
 			return when.resolve(successList);
 		}
 	}
+};
+
+var general = {
+	init : function(conf){
+		configs = conf;
+	}
 }
 
 // Export public objs
 exports.api = api;
 exports.lights = lights;
 exports.groups = groups;
+exports.init = general.init;

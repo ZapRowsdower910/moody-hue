@@ -8,21 +8,22 @@
 **
 *****/
 
-var _ = require("underscore");
-var log4js = require("log4js");
-var logger = log4js.getLogger("Bedtime Plugin");
+var _ = require("underscore"),
+	log4js = require("log4js"),
+	logger = log4js.getLogger("Bedtime Plugin");
 
 // local deps
 // var server = require("../rest");
-var configs = require("../state");
-var server = require("../express");
-var hue = require("../hue-api");
-var utils = require("../utils");
+var session = require("../session"),
+	server = require("../express"),
+	hue = require("../hue-api"),
+	utils = require("../utils"),
+	configs;
 
 var methods = {
 	actions : {
-		init : function(){
-
+		init : function(conf){
+			configs = conf;
 		},
 		start : function(){
 
@@ -33,8 +34,8 @@ var methods = {
 	},
 	bedtimeWatcher : function(startTime){
 		logger.info("Starting up bedtime monitor:", startTime);
-		configs.state.timers.bedtimeWatcher = setInterval(function(){
-			if(configs.state.current.mode == "bedtime"){
+		session.state.timers.bedtimeWatcher = setInterval(function(){
+			if(session.state.current.mode == "bedtime"){
 				// get now
 				var now = new Date();
 				
@@ -46,13 +47,13 @@ var methods = {
 				if(now > endTime){
 					logger.info("Good Morning! Looks like bedtimes over");
 					// remove mode control
-					configs.state.current.mode = "none";
+					session.state.current.mode = "none";
 					// Clear timer
-					clearInterval(configs.state.timers.bedtimeWatcher);
+					clearInterval(session.state.timers.bedtimeWatcher);
 				}
 			} else {
 				logger.info("Bedtime was canceled early? weak..");
-				clearInterval(configs.state.timers.bedtimeWatcher);
+				clearInterval(session.state.timers.bedtimeWatcher);
 			}
 		},
 		utils.converter.minToMilli(configs.bedtime.watcherInterval));
@@ -78,7 +79,7 @@ var methods = {
 
 /**
 *	Turns off all the lights but ones designated as the "Bedroom" under 
-*	configs.rooms.definitions
+*	configs.rooms
 *
 **/
 server.put('/bedtime/reading', function(req,resp){
@@ -96,11 +97,11 @@ server.put('/bedtime/reading', function(req,resp){
 		if(bedtimeGroup){
 			
 			methods.sleepyTime(bedtimeGroup.lights);
-			configs.state.current.mode = "bedtime";
+			session.state.current.mode = "bedtime";
 			resp.send(200);
 			
 		} else {
-			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
+			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms");
 			logger.debug(configs);
 			resp.send(500);
 		}
@@ -118,7 +119,7 @@ server.put('/bedtime/sleep', function(req,resp){
 	try{
 		
 		methods.sleepyTime();
-		configs.state.current.mode = "sleep";
+		session.state.current.mode = "sleep";
 		
 		resp.send(200);
 	} catch (e){
@@ -141,11 +142,11 @@ server.put("/bedtime/wakeup",function(req,resp){
 				hue.lights.turnOn(light);
 			});
 
-			configs.state.current.mode = "none";
+			session.state.current.mode = "none";
 
 			resp.send(200);
 		} else {
-			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms.definitions");
+			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms");
 			logger.debug(configs);
 			resp.send(500);
 		}

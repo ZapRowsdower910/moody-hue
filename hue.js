@@ -1,19 +1,21 @@
-var needle = require("needle");
-var fs = require("fs");
-var _ = require("underscore");
-var log4js = require("log4js");
+var needle = require("needle"),
+	fs = require("fs"),
+	_ = require("underscore"),
+	log4js = require("log4js");
 
-var sun = require("suncalc");
-var when = require("when");
+var sun = require("suncalc"),
+	when = require("when");
 
 // local deps
-var hue = require("./hue-api");
-var configs = require("./state");
-// var server = require("./rest");
-var pluginManager = require("./pluginManager");
-var utils = require("./utils");
-var express = require('./express');
-var extend = require("./extend");
+var hue = require("./hue-api"),
+	configManager = require("./configManager")
+	session = require("./session"),
+// // var server = require("./rest");
+	pluginManager = require("./pluginManager"),
+	utils = require("./utils"),
+	express = require('./express'),
+// 	extend = require("./extend"),
+	rooms = require("./rooms");
 
 // console.log(configs.general.logging.fileAppender);
 // log4js.configure({
@@ -44,43 +46,52 @@ log4js.configure({
 });
 
 var logger = log4js.getLogger("Main");
+var configs;
 
 main = {
 	init : function(){
 		try{
 			logger.info("Starting up moody-hues");
 
-			// load configuration file
-			fileConfigs = JSON.parse( fs.readFileSync('conf.js', encoding="utf-8"));
+			// Load config file, then bootstrap application
+			configManager.load().then(
+				function(conf){
+					configs = conf;
 
-			var mergedConfigs = extend(true, fileConfigs, configs);
-			configs = mergedConfigs;
+					// Save conf at regular time frames if conf
+					// has been modified
+					configManager.scheduler.start();
 
- 			// Start rest server
-			// server.listen(configs.server.port, configs.server.ip_addr, function(){
-			// 	logger.info("====================================================");
-			// 	logger.info("=========== [ Starting up REST service ] ===========");
-			//     logger.info("=========== [ App %s           ] ===========", server.name);
-			// 	logger.info("=========== [ listening at %s ] ======", server.url );
-			// 	logger.info("====================================================");
-			// });
+					// Wire up configs
+					hue.init(configs);
+					express.hueInit(configs);
+					utils.init(configs);
+					rooms.init(configs);
 
-			// Setup session objects
-			configs.state = {};
-			configs.state.timers = {};
-			configs.state.current = {
-				mode : "startup",
-				isSetup : false,
-				isScanningForBase : false,
-				timers : {}
-			};
+					// Setup session objects
+					session.state.timers = {};
+					session.state.current = {
+						mode : "startup",
+						isSetup : false,
+						isScanningForBase : false
+						// timers : {}
+					};
 
-			main.checkStatus();
-			// main.startPlugins();
-			// Get intial boot times
-			main.times.refresh();
-			// setup a watcher to refresh the times daily
-			main.times.watcher.start();
+					// Check to see if app is registered on hue base
+					// server - then startup plugins
+					main.checkStatus();
+
+					// Get intial boot times
+					main.times.refresh();
+					// setup a watcher to refresh the times daily
+					main.times.watcher.start();
+				},
+				function(msg, err){
+					logger.error("Unable to start application", msg, err );
+				}
+			);
+
+			
 		} catch(e){
 			logger.error("Error attempting to start app", e);
 		}
@@ -127,7 +138,7 @@ main = {
 		logger.info("Boot sequence completed. Starting up plugins");
 		try{
 			
-			pluginManager.init();
+			pluginManager.init(configs);
 
 		} catch (e){
 			logger.error("Error while starting up plugins: ", e);
@@ -136,7 +147,7 @@ main = {
 	times : {
 		refresh : function(){
 			var now = new Date();
-			configs.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
+			session.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
 		},
 		watcher : {
 			start : function(){
@@ -147,13 +158,13 @@ main = {
 				var tomorrow = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
 				var timeToWait = tomorrow - now;
 				logger.info("Scheduling time refresh in ["+timeToWait+"]");
-				configs.state.current.timers.timeRefresh = setTimeout(function(){
+				session.state.timers.timeRefresh = setTimeout(function(){
 					// reset times
 					main.times.watcher.interval();
 					// make sure the timer var is cleared so we can reuse it
-					clearTimeout(configs.state.current.timers.timeRefresh);
+					clearTimeout(session.state.timers.timeRefresh);
 					// setup an interval event to allow for refreshing every 24hrs
-					configs.state.current.timers.timeRefresh = setInterval(
+					session.state.timers.timeRefresh = setInterval(
 						main.times.watcher.interval,
 						utils.converter.hrsToMilli(24)
 					);
@@ -162,11 +173,11 @@ main = {
 				timeToWait);
 			},
 			stop : function(){
-				clearTimeout(configs.state.current.timers.timesRefresh);
+				clearTimeout(session.state.timers.timesRefresh);
 			},
 			interval : function(){
 				var now = new Date();
-				if(configs.state.times.rolloverTime < now){
+				if(session.state.times.rolloverTime < now){
 					main.refreshTimes();
 				}
 			}
@@ -174,7 +185,7 @@ main = {
 	},
 	isDarkOut : function(){	
 		var now = new Date();
-		if(now < configs.state.times.sunriseEnd){
+		if(now < session.state.times.sunriseEnd){
 			return true;
 		}
 
