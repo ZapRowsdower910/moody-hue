@@ -5,17 +5,23 @@ var _ = require("underscore"),
 	logger = log4js.getLogger("Plugin Manager"),
 	configs;
 
+	var session = require("./session");
+
 var methods = {
 	init : function(conf){
 		logger.info("Initializing Plugin Manager");
 		configs = conf;
+
 		methods.getDir("plugins").then(function(files){
+
 			logger.info("files currently in folder ["+files+"]");
 			_.each(files, function(file){
+
 				var parts = file.split(".");
 				if(parts.length > 1 && parts[1] == "js"){
 					methods.loadPlugin(file);
 				}
+
 			});
 		});
 	},
@@ -41,7 +47,14 @@ var methods = {
 
 		if(plugin){
 			try{
-				plugin.actions.init(configs);
+
+				// Init plugin
+				plugin.init(configs);
+
+				if(plugin.configs.type == "effect"){
+					session.state.plugins.effects.push(plugin);
+				}
+
 			} catch(e){
 				logger.debug("Failed to fire init event on plugin ["+file+"] due to ["+e+"]");
 			}	

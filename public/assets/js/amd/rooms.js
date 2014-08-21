@@ -4,6 +4,16 @@ define(["jquery","underscore","lights","stage"],
 			room;
 
 		var methods = {
+			updateLight : function(d){
+
+				light = _.find(lights, function(v,i){
+					return v.getPositionData().id == d.id;
+				});
+
+				if(light){
+					light.update(d.data.state);
+				}
+			},
 			refreshRoom : function(data){
 				// console.log("refresh room event received [%o]", data);
 

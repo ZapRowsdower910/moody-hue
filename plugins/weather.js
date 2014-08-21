@@ -27,20 +27,22 @@ var instance,
 
 
 var api = {
-	actions : {
-		init : function(conf){
-			configs = conf;
-			instance = new Forecast({
-				service : "forecast.io",
-				key : "df4d170ea01fc3a0cb9ab53d8cefd8b5",
-				units : "ferinheight",
-				cache : true,
-				ttl: {           
-				// How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
-				  minutes: 30
-				}
-			});
-		}
+	configs: {
+		name : "Weather",
+		type : "service"
+	},
+	init : function(conf){
+		configs = conf;
+		instance = new Forecast({
+			service : "forecast.io",
+			key : "df4d170ea01fc3a0cb9ab53d8cefd8b5",
+			units : "ferinheight",
+			cache : true,
+			ttl: {           
+			// How long to cache requests. Uses syntax from moment.js: http://momentjs.com/docs/#/durations/creating/
+			  minutes: 30
+			}
+		});
 	},
 	get : function(){
 		// make sure we have built an instance..

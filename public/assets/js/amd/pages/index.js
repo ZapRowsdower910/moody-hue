@@ -62,6 +62,15 @@ define(["jquery", "socket.io","stage","rooms"], function($, io, canvas, rooms){
         	}
         });
 
+        page.on("update light state", function(d){
+          try{
+            rooms.updateLight(d);  
+          } catch(e){
+            console.error(e);
+          }
+          
+        });
+
     var methods = {
 		init : function(){
 			$('.room-menu').on("click", "li", function(){

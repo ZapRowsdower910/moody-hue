@@ -170,8 +170,7 @@ define(["jquery","hueUtils","socket.io","stage"],
 	        		var shape,
 	        			fill,
 	        			handle,
-	        			x = -30,
-	        			y = -30;
+	        			x = y = 0;
 
 	        		shape = new Kinetic.Rect({
 					  strokeEnabled: true,
@@ -216,7 +215,12 @@ define(["jquery","hueUtils","socket.io","stage"],
 							bri = Math.ceil(percent * 2.55);
 
 					    console.log(percent, bri);
-					    methods.cache.light.changeBri(bri);
+					    var prms = methods.cache.light.changeBri(bri);
+
+					    prms.then(function(hueData){
+					    	// console.log("change bri callback dfd resolved",hueData)
+					    	methods.level.position(fill.getX(),fill.getY(),hueData);
+					    });
 					});
 
 					methods.cache.groups.level = new Kinetic.Group();
@@ -224,47 +228,58 @@ define(["jquery","hueUtils","socket.io","stage"],
 					methods.cache.groups.level.add(fill);
 					methods.cache.groups.level.add(shape);
 
+					methods.cache.groups.level.hide();
+
 					canvas.layer.add(methods.cache.groups.level);
 					canvas.layer.draw();
 
 					return methods.cache.groups.level;
 	        	},
 	        	position : function(x,y,hue){
-	        		var h = (hue.color.bri / 2.55),
-	        			offset = (100 - h),
-	        			fill = methods.cache.groups.level.find("#level-fill");
+	        		try{
+	        			console.log(arguments)
+	        			var bri = hue ? hue.bri : 0,
+	        				h = (bri / 2.55),
+		        			offset = (100 - h),
+		        			fill = methods.cache.groups.level.find("#level-fill");
 
-	        		console.log("bri is:", hue.color.bri, h, offset)
+		        		console.log("bri is:", bri, h, offset)
 
-	        		methods.cache.groups.level.setX(x - 85);
-	        		methods.cache.groups.level.setY(y - 50);
+		        		methods.cache.groups.level.setX(x - 90);
+		        		methods.cache.groups.level.setY(y - 50);
 
-	        		fill.setHeight(h);
-	        		fill.position({y:offset});
+		        		fill.setHeight(h);
+		        		fill.position({y:offset});
 
-	        		// handle.position({y:offset})
+		        		// handle.position({y:offset})
+console.log("isVisible: ", methods.cache.groups.level.isVisible())
 
-	        		methods.cache.groups.level.show();
+		        		if(!methods.cache.groups.level.isVisible()){
+		        			methods.cache.groups.level.show();
+		        		}
+	        		}catch(e){
+	        			console.log("exception while positioning",e);
+	        		}
 	        	}
 	        },
 	        	
         	show : function(){
         		var lite = this.getKinetic(),
         			x = lite.attrs.x,
-					y = lite.attrs.y,
-					hue = $(lite).data("hue");
+							y = lite.attrs.y,
+							hue = $(lite).data("hue");
 
 				// Set current light
 				methods.cache.light = this;
 
-				$('.pill.on').text(hue.color.on ? "Turn Off" : "Turn On");
+				$('.pill.on').text(( hue.color && hue.color.on) ? "Turn Off" : "Turn On");
 
 				$('.light-menu').css({'top':(y - 40)+'px', 'left': (x + 55) + "px"}).fadeIn();
 
 				$(".light-menu").data("active", lite);
 
 				methods.badge.position(x,y,hue);
-				methods.level.position(x,y,hue);
+				methods.level.position(x,y,hue.color);
 				
 				// methods.cache.groups.level.show();
 				

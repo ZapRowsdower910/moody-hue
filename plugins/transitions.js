@@ -36,38 +36,6 @@ var validModes = [
 	};
 
 var methods = {
-	actions : {
-		start : function(){
-			try{
-				logger.info("Attempting to start transitions");
-				if(timers.cycles == null){
-					// run it once
-					methods.cycle();
-					// setup timer to re-run
-					timers.cycles = setInterval(function(){
-						methods.cycle();
-					},
-					utils.converter.minToMilli(configs.transitions.interval));
-				} else {
-					logger.error("Transitions is already started");
-				}
-			} catch(e){
-				logger.error("Error while attempting to start transitions ["+e+"]");
-			}
-		},
-		stop : function(){
-			logger.info("Stopping transitions");
-			clearInterval(timers.cycle);
-			timers.cycle = null;
-		},
-		init : function(conf){
-			logger.info("Initializing transitions plugin");
-			configs = conf;
-			session.state.current.transitions = {};
-			session.state.current.transitions.hue = 0;
-			methods.actions.start();
-		}
-	},
 	cycle : function(){
 		if(validModes.indexOf(session.state.current.mode) > -1){
 			var room = session.state.current.transitions.currentRoom;
@@ -99,7 +67,7 @@ var methods = {
 				}
 			},
 			function(e){
-				logger.error("error finding if light ["+lightId+"] is on. err["+JSON.stringifty(e)+"]");
+				logger.error("error finding if light ["+lightId+"] is on. err["+JSON.stringify(e)+"]");
 			});
 
 			set.push(pms);
@@ -195,4 +163,42 @@ server.put("/transitions/start/:str", function(req, res, next){
 	}
 });
 
-module.exports = methods;
+// Public Methods
+var pubs = {
+	configs : {
+		name : "Transitions",
+		type : "effect"
+	},
+	init : function(conf){
+		logger.info("Initializing transitions plugin");
+		configs = conf;
+		session.state.current.transitions = {};
+		session.state.current.transitions.hue = 0;
+		pubs.start();
+	},
+	start : function(){
+		try{
+			logger.info("Attempting to start transitions");
+			if(timers.cycles == null){
+				// run it once
+				methods.cycle();
+				// setup timer to re-run
+				timers.cycles = setInterval(function(){
+					methods.cycle();
+				},
+				utils.converter.minToMilli(configs.transitions.interval));
+			} else {
+				logger.error("Transitions is already started");
+			}
+		} catch(e){
+			logger.error("Error while attempting to start transitions ["+e+"]");
+		}
+	},
+	stop : function(){
+		logger.info("Stopping transitions");
+		clearInterval(timers.cycle);
+		timers.cycle = null;
+	}
+};
+
+module.exports = pubs;

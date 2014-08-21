@@ -25,7 +25,7 @@ var api = {
 						dfd.resolve(rsp);
 					}
 				} else {
-					logger.warn("api level",err);
+
 					var details = {
 						path : configs.hue.baseIp + "/api/" + configs.general.apiName + path,
 						args : arguments
@@ -307,18 +307,22 @@ var groups = {
 
 var utils = {
 	requestError : function(err){
-		// logger.error("Api request resulted in an error", err);
-		utils.apiError(err);
 
 		// If the error is host unreachable and we have an IP address we may have
 		// lost the hub. Try to re-pull the hub's IP address from the web
-		if(err.code == "EHOSTUNREACH"
-			&& configs.hue.baseIp != "")
+		if(err.code == "EHOSTUNREACH" &&
+			configs.hue.baseIp != "")
 		{
 			logger.info("Host unreachable error detected - pulling hubs IP fresh incase hubs IPs addy changed.");
 			// Reset isSetup state
 			session.state.current.isSetup = false;
 			api.isSetup();	
+
+		} else if(err.code == "ECONNRESET"){
+			logger.error("Connection reset by hue base server");
+		} else {
+			// Error is most likely a hue error
+			utils.apiError(err);	
 		}
 		
 	},
@@ -357,8 +361,6 @@ var utils = {
 			logger.error("Groups appear to be full, please remove one to before adding another.");
 		} else if(err.type == 302){
 			logger.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
-		} else {
-			logger.error("unregonized error type.");
 		}
 	},
 	processArrayResp : function(rsp,dfd){

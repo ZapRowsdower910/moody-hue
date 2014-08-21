@@ -52,7 +52,7 @@ main = {
 	init : function(){
 		try{
 			logger.info("Starting up moody-hues");
-
+console.log(session)
 			// Load config file, then bootstrap application
 			configManager.load().then(
 				function(conf){

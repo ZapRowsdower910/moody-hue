@@ -21,17 +21,6 @@ var session = require("../session"),
 	configs;
 
 var methods = {
-	actions : {
-		init : function(conf){
-			configs = conf;
-		},
-		start : function(){
-
-		},
-		stop : function(){
-
-		}
-	},
 	bedtimeWatcher : function(startTime){
 		logger.info("Starting up bedtime monitor:", startTime);
 		session.state.timers.bedtimeWatcher = setInterval(function(){
@@ -156,4 +145,20 @@ server.put("/bedtime/wakeup",function(req,resp){
 	}
 });
 
-module.exports = methods;
+var pubs = {
+	configs : {
+		name : "Bedtime",
+		type : "service"
+	},
+	init : function(conf){
+		configs = conf;
+	},
+	start : function(){
+
+	},
+	stop : function(){
+
+	}
+};
+
+module.exports = pubs;

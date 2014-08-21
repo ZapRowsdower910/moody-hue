@@ -11,13 +11,6 @@ var hue = require("../hue-api"),
 	configs;
 
 var methods = {
-	actions : {
-		init : function(conf){
-			configs = conf;
-		},
-		start : function(){},
-		stop : function(){}
-	},
 	startCycle : function(room){
 		if(room == undefined){
 			room = utils.findRoom(configs.coment.defaultRoom);
@@ -102,4 +95,16 @@ server.put("/coment/start/:room", function(req, resp){
 	}
 });
 
-module.exports = methods;
+var pubs = {
+	configs : {
+		name : "Coment",
+		type : "effect"
+	},
+	init : function(conf){
+		configs = conf;
+	},
+	start : function(){},
+	stop : function(){}
+};
+
+module.exports = pubs;

@@ -36,74 +36,6 @@ var validModes = [
 	data = {};
 
 methods = {
-	actions : {
-		init : function(conf){
-			logger.info("Attempting to startup Accents");
-
-				try{
-					configs = conf;
-					session.state.accents = {};
-					session.state.current.accents = {};
-
-					// convert minutes to seconds
-					configs.accents.timer = utils.converter.minToMilli(configs.accents.timer);
-					configs.accents.transitionTime = utils.converter.minToTransitionTime(configs.accents.transitionTime);
-
-					// // Transition time must be lower than timer
-					// var adjustedTime = configs.accents.timer / 100;
-					// if(adjustedTime < configs.accents.transitionTime){
-					// 	configs.accents.transitionTime = adjustedTime - 1000;
-					// 	if(configs.accents.transitionTime <= 0){
-					// 		configs.accents.transitionTime = 1;
-					// 	}
-					// 	logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
-						
-					// }
-
-					methods.buildActiveGroups();
-
-					// Find the default room
-					session.state.accents.defaultRoom = _.find(configs.rooms, function(v){
-						return v.name == configs.accents.defaultRoom;
-					});
-					
-					logger.debug("Default room set to ["+session.state.accents.defaultRoom.name+"]");
-					session.state.current.accents.room = session.state.accents.defaultRoom;
-
-				} catch (e){
-					logger.error("Exception while attempting to init Accents", e);
-				}
-
-		},
-		start : function(){
-			logger.info("Enabling Accent mode");
-			// lock in our mode
-			session.state.current.mode = "accents-bright";	
-			
-			// Start change immedately
-			methods.startChange();
-			
-			if(timers.accents == null){
-				// if accents is running already, we should clear out the previous timer and restart it.
-				// This will ensure our fresh run wont change too early on the first cycle
-				clearInterval(timers.accents);
-			}
-			
-			// setup future changes
-			timers.accents = setInterval(function(){
-				methods.startChange();
-			},
-			configs.accents.timer);
-		},
-		stop : function(){
-			logger.info("Disabling Accent mode");
-			session.state.current.mode = "none";
-			
-			clearTimer(timers.accents);
-			
-			return true;
-		}
-	},
 	buildActiveGroups : function(){
 		
 		// Build a list of unique groups and profiles we need
@@ -369,4 +301,77 @@ server.put("/accents/start", function(req, resp){
 	return next();
 });
 
-module.exports = methods;
+var pubs = {
+	configs : {
+		name : "Accents",
+		type : "effect"
+	},
+	init : function(conf){
+			logger.info("Attempting to startup Accents");
+
+				try{
+					configs = conf;
+					session.state.accents = {};
+					session.state.current.accents = {};
+
+					// convert minutes to seconds
+					configs.accents.timer = utils.converter.minToMilli(configs.accents.timer);
+					configs.accents.transitionTime = utils.converter.minToTransitionTime(configs.accents.transitionTime);
+
+					// // Transition time must be lower than timer
+					// var adjustedTime = configs.accents.timer / 100;
+					// if(adjustedTime < configs.accents.transitionTime){
+					// 	configs.accents.transitionTime = adjustedTime - 1000;
+					// 	if(configs.accents.transitionTime <= 0){
+					// 		configs.accents.transitionTime = 1;
+					// 	}
+					// 	logger.warn("Accents transition time is configured higher than the accent profile timer. The transiiton timer must be set to a larger value to give the bulbs enough time to complete their color change. Transition time has been adjusted to ["+configs.accents.transitionTime+"]");
+						
+					// }
+
+					methods.buildActiveGroups();
+
+					// Find the default room
+					session.state.accents.defaultRoom = _.find(configs.rooms, function(v){
+						return v.name == configs.accents.defaultRoom;
+					});
+					
+					logger.debug("Default room set to ["+session.state.accents.defaultRoom.name+"]");
+					session.state.current.accents.room = session.state.accents.defaultRoom;
+
+				} catch (e){
+					logger.error("Exception while attempting to init Accents", e);
+				}
+
+		},
+		start : function(){
+			logger.info("Enabling Accent mode");
+			// lock in our mode
+			session.state.current.mode = "accents-bright";	
+			
+			// Start change immedately
+			methods.startChange();
+			
+			if(timers.accents == null){
+				// if accents is running already, we should clear out the previous timer and restart it.
+				// This will ensure our fresh run wont change too early on the first cycle
+				clearInterval(timers.accents);
+			}
+			
+			// setup future changes
+			timers.accents = setInterval(function(){
+				methods.startChange();
+			},
+			configs.accents.timer);
+		},
+		stop : function(){
+			logger.info("Disabling Accent mode");
+			session.state.current.mode = "none";
+			
+			clearTimer(timers.accents);
+			
+			return true;
+		}
+	};
+
+module.exports = pubs;
