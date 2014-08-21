@@ -10,7 +10,7 @@
 var _ = require("underscore"),
 	when = require("when"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Rooms");
+	logger = log4js.getLogger("LogMeIn");
 
 var hue = require("../hue-api"),
 	server = require("../express"),
@@ -43,18 +43,18 @@ var methods = {
 			session.state.current.mode = "home";
 
 			if(methods.checkTime()){
-				rooms.roomControl.turnOn(configs.rooms.homeLights);
+				rooms.roomControl.turnOn(configs.logMeIn.homeLights);
 
 				// Display command status
-				blinkChange.hue = configs.rooms.status.colors.welcome;
-				hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
+				blinkChange.hue = configs.logMeIn.status.colors.welcome;
+				hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 			} else { 
 				console.log("Not late enough for lights yet.");
 				methods.sunsetWatcher.start();
 
 				// Display command status
-				blinkChange.hue = configs.rooms.status.colors.pending;
-				hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
+				blinkChange.hue = configs.logMeIn.status.colors.pending;
+				hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 			}
 
 
@@ -62,11 +62,11 @@ var methods = {
 			logger.info("Goodbye! I'll just shut off lights for ya..")
 			session.state.current.mode = "notHome";
 
-			methods.roomControl.turnOff(configs.rooms.homeLights);
+			methods.roomControl.turnOff(configs.logMeIn.homeLights);
 
 			// Display command status
-			blinkChange.hue = configs.rooms.status.colors.goodbye;
-			hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
+			blinkChange.hue = configs.logMeIn.status.colors.goodbye;
+			hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 
 			// Stop the watcher if its running
 			methods.sunsetWatcher.stop;
@@ -74,8 +74,8 @@ var methods = {
 			logger.info("Unknown state detected ["+state+"]");
 
 			// Display command status
-			blinkChange.hue = configs.rooms.status.colors.unknown;
-			hue.lights.blink(configs.rooms.status.light, blinkChange, 1000);
+			blinkChange.hue = configs.logMeIn.status.colors.unknown;
+			hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 		}
 
 	},
@@ -110,13 +110,13 @@ var methods = {
 * - in
 * - out
 **/ 
-server.put('/rooms/log/:state', function(req, resp){
+server.put('/log/:state', function(req, resp){
 	logger.trace("request received for /rooms/log: ");
 	
 	try{
 	
 		methods.home(req.params.state);
-		resp.status(200);
+		resp.status(200).json({"error":0});
 	
 	} catch(e){
 		logger.error("error while attempting to process a home event",e);

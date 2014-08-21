@@ -6,6 +6,7 @@ var needle = require("needle"),
 
 // local deps
 var configManager = require("./configManager"),
+	hueUtils = require("./utils"),
 	session = require("./session"),
 	configs;
 
@@ -246,7 +247,7 @@ var lights = {
 					clearInterval(blinkTimer);
 					currentState.state.transitiontime = 10;
 					logger.debug("reverting back to original state ["+JSON.stringify(currentState.state)+"]");
-					lights.state.change(lightId, utils.filterHueStateObj(currentState.state)).then(function(){
+					lights.state.change(lightId, hueUtils.filterHueStateObj(currentState.state)).then(function(){
 						logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
 					},
 					function(e){
