@@ -111,10 +111,8 @@ var methods = {
 * - out
 **/ 
 server.put('/log/:state', function(req, resp){
-	logger.trace("request received for /rooms/log: ");
-	
 	try{
-	
+	logger.info("routed req /log/:state",req.params)
 		methods.home(req.params.state);
 		resp.status(200).json({"error":0});
 	

@@ -12,6 +12,7 @@
 
     <!-- Bootstrap core CSS -->
     <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/css/font-awesome.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="/assets/css/main.css" rel="stylesheet">
@@ -54,7 +55,9 @@
 
       <div class="wpr">
         <div class="room-menu pull-left">
-          <ul class="nav nav-pills nav-stacked"></ul>
+          <ul class="nav nav-pills nav-stacked">
+            <li class="heading text-center">ROOMS</li>
+          </ul>
         </div>
 
         <div class="room-display pull-left">
@@ -69,16 +72,18 @@
             </div>
           </div> <!-- /.renderBoxWpr -->
           
-          <div class="room-controls">
-            <ul class="list-inline">
-              <li><button name="updateStatus" type="button" class="btn update-status">Update Status</button></li> 
-              <li>
-            </ul>
+          <div class="room-status-wpr">
+            <div class="room-status">
+                <span class="fa fa-tasks fa-5x comp"></span>
+                <span class="fa fa-warning fa-5x connection-issues hide"></span>
+            </div>
           </div>
         </div> <!-- /.room-dispay -->
 
         <div class="room-details pull-left">
-          <ul class="nav nav-pills nav-stacked"><li>something</li></ul>
+          <ul class="nav nav-pills nav-stacked">
+            <li class="heading text-center">ROOM DETAILS</li>
+          </ul>
         </div>
 
         <div class="clearfix"></div>
@@ -90,73 +95,6 @@
 
     <script type="text/javascript">
 
-
-      // var lights = [],
-      //   canvas = {
-      //     layer:undefined,
-      //     stage:undefined
-      //   };
-
-      // var methods = {
-      //   init : function(){
-      //     canvas.stage = new Kinetic.Stage({
-      //       container: "renderBox",
-      //       width: 850,
-      //       height: 500
-      //     });
-
-      //     canvas.layer = new Kinetic.Layer();
-      //     canvas.stage.add(canvas.layer);
-      //   },
-        
-      //   lights : {
-          
-      //   }
-      // };
-
-      var displayLight = function(light, state){
-        console.log('updatin lite [%s] state [%o]', light, state);
-      }
-
-      // $(function(){
-      
-        // methods.init();
-
-        // $('.add-light').on('click', function(){
-        //   addLight();
-        // });
-
-        // socket.on("update room state", function(data){
-        //   // console.log("update room status event received [%o]", data);
-
-        //   try{
-
-        //     for(var i = 0;i < lights.length;i++){
-        //       var thisLight = data[i].state;
-        //       // console.log(thisLight);
-
-        //       var liteObj = lights[i];
-
-              
-        //     }
-
-        //     canvas.stage.draw();
-
-        //   }catch(e){
-        //     console.error(e)
-        //   }
-          
-        // });
-     
-        // $('.update-status').on("click", function(){
-        //   //
-        // });
-
-        // $('.pill.on').on("click",function(){
-        //   methods.lights.turnOff();
-        // });
-
-      // });
     </script>
   </body>
 </html>

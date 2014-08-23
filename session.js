@@ -1,12 +1,14 @@
 var app = {
 	current : {
+		rooms : {},
 		mode : "transitions-mid",
 		profile : "none",
 		rolloverTime : undefined,
 		// isSetup : false
 	},
 	plugins : {
-		effects : []
+		effects : [],
+		services : []
 	}
 };
 

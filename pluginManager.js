@@ -23,6 +23,8 @@ var methods = {
 				}
 
 			});
+
+			logger.info("effects found [%s] services found [%s]", session.state.plugins.effects.length, session.state.plugins.services.length)
 		});
 	},
 	getDir : function(path){
@@ -53,6 +55,8 @@ var methods = {
 
 				if(plugin.configs.type == "effect"){
 					session.state.plugins.effects.push(plugin);
+				} else if (plugin.configs.type == "service"){
+					session.state.plugins.services.push(plugin);
 				}
 
 			} catch(e){

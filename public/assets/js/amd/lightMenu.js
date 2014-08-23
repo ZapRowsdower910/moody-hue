@@ -109,12 +109,12 @@ define(["jquery","hueUtils","socket.io","stage"],
 					});
 
 					id = new Kinetic.Text({
-						x: (x - 26),
-						y: (y - 37),
+						x: (x - 25),
+						y: (y - 26),
 						text: "",
-						fontSize: 30,
+						fontSize: 16,
 						fontStyle : "bold",
-						fontFamily: 'space',
+						fontFamily: 'elektora',
 						fill: 'black',
 						rotation : -28,
 						id: "lightId"

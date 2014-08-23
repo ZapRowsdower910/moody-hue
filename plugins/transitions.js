@@ -56,10 +56,10 @@ var methods = {
 
 		var set = [];
 
-		_.each(room.lights,function(lightId){
-			var pms = hue.lights.state.isOn(lightId).then(function(isOn){
+		_.each(room.lights,function(light){
+			var pms = hue.lights.state.isOn(light.id).then(function(isOn){
 				if(isOn == false){
-					var promise = hue.lights.turnOnDim(lightId);
+					var promise = hue.lights.turnOnDim(light.id);
 					promise.catch(function(e){
 						logger.error("turn on dim failed ["+JSON.stringify(e)+"]");
 					});
@@ -67,7 +67,7 @@ var methods = {
 				}
 			},
 			function(e){
-				logger.error("error finding if light ["+lightId+"] is on. err["+JSON.stringify(e)+"]");
+				logger.error("error finding if light ["+light.id+"] is on. err["+JSON.stringify(e)+"]");
 			});
 
 			set.push(pms);

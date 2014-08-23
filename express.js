@@ -100,9 +100,9 @@ var roomMonitor = {
 		if(roomMonitor.monitors == undefined){
 			roomMonitor.monitors = {};
 			
-			_.each(configs.rooms, function(room,index){
-				roomMonitor.monitors[room.name] = undefined;
-			});
+			// _.each(configs.rooms, function(room,index){
+			// 	roomMonitor.monitors[room.name] = undefined;
+			// });
 
 			var room = utils.findRoom(socket.room),
 					cycleDelay = 1000,
@@ -117,13 +117,13 @@ var roomMonitor = {
 					_.each(room.lights, function(v,i){
 						// logger.info("light [%s] cycling in [%s]", v, , cycleTime);
 						setTimeout(function(){
-							logger.info("Setuping up light [%o] in [%s]ms", v, cycleDelay)
-								roomMonitor.monitors[room.name][v] = setInterval(function(){
+							logger.info("Setuping up light [%s] in [%s]ms", v.id, cycleDelay)
+								roomMonitor.monitors[room.name][v.id] = setInterval(function(){
 									roomMonitor.cycle.call(roomMonitor, v.id, socket);
 								},
 								cycleTime);
 							},
-	  	        cycleDelay += 1000);
+	  	        cycleDelay += 500);
 						
 					});
 
@@ -139,7 +139,7 @@ var roomMonitor = {
 		var lightData = [],
 				prmsCollection = [];
 
-		logger.debug("update cycle for light [%s] for client [%s]",lightId,socket.id);
+		logger.debug("update cycle for light [%s] for room [%s]",lightId,socket.room);
 
 		hue.lights.state.get(lightId).then(
 			function(d){
@@ -159,25 +159,32 @@ index.on('connection', function (socket) {
 	logger.info("New client connection established on /index");	
 
     socket.on("join room", function(room,fn){
-    	logger.info("Joining room [%s]",room.name);
 
-    	var room = _.find(configs.rooms, function(v,i){
-    		return v.name == room.name;
-    	});
+    	if(roomMonitor.monitors == undefined ||	
+    	   (roomMonitor.monitors != undefined &&
+    	   roomMonitor.monitors[socket.room] == undefined))
+    	{
+    		logger.info("Joining room [%s]",room.name);
 
-    	// if were in a room - leave it
-    	if(socket.room){
-    		socket.leave(socket.room);	
+	    	var room = _.find(configs.rooms, function(v,i){
+	    		return v.name == room.name;
+	    	});
+
+	    	// if were in a room - leave it
+	    	if(socket.room){
+	    		socket.leave(socket.room);	
+	    	}
+	    	
+	    	// Join room
+	    	socket.join(room.name);
+	    	// Set sockets room
+	    	socket.room = room.name;
+
+	    	roomMonitor.init(socket);
+
+	    	fn(room);	
     	}
-    	
-    	// Join room
-    	socket.join(room.name);
-    	// Set sockets room
-    	socket.room = room.name;
 
-    	roomMonitor.init(socket);
-
-    	fn(room);
     });
 
 	socket.on("move light", function (data){
@@ -216,7 +223,11 @@ index.on('connection', function (socket) {
 	socket.on("get rooms", function(data, fn){
 		logger.info("socket request 'get rooms' received");
 		// console.log(configs.rooms, arguments);
-		fn(configs.rooms);
+		var dets = {
+			effects : session.state.plugins.effects,
+			services : session.state.plugins.services
+		}
+		fn({"rooms":configs.rooms, "details":dets});
 	});
 
 	socket.on("change bri", function(data,fn){

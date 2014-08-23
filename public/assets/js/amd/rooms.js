@@ -45,15 +45,15 @@ define(["jquery","underscore","lights","stage"],
 
 			},
 			setRooms : function(data, currentRoom){
-
+console.log(arguments)
 	          var $roomMenu = $('.room-menu > ul');
-	          $roomMenu.find('li').remove();
+	          $roomMenu.find('li:not(.heading)').remove();
 
 	          _.each(data, function(v,i){
 	          	var li = document.createElement('li'),
 	          		$li = $(li);
 
-	            $li.addClass('pill').data("room", v).text(v.name);
+	            $li.addClass('').data("room", v).text(v.name);
 	            if(v.name == currentRoom){
 	            	$li.addClass('active');
 	            }
