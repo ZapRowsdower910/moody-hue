@@ -56,6 +56,17 @@ var methods = {
 	restError : function(path, res, e){
 		logger.error("Error while processing request [%s] exception: ", path, e);
 		res.send(500);
+	},
+	parseHueErrorResp : function(res){
+		var errs = [];
+		
+		_.each(res, function(e){
+			if(e.error){
+				errs.push(e.error.description);
+			}
+		});
+
+		return errs;
 	}
 };
 

@@ -69,7 +69,7 @@ var api = {
 				if(!err){
 					dfd.resolve(resp.body);
 				} else {
-					utils.requestError(err);
+					console.log("detected put err on success resp")
 					dfd.reject(err);
 				}
 			});
@@ -101,7 +101,6 @@ var api = {
 				}
 				
 			} else {
-				utils.requestError(err);
 				dfd.reject(err);
 			}
 		});
@@ -189,7 +188,11 @@ var lights = {
 			return lightPromises;
 		},
 		get : function(lightId){
-			return api.get("/lights/" + lightId);
+			return api.get("/lights/" + lightId).then(function(d){
+				// Add the current light id to the state resp
+				d.id = lightId;
+				return d;
+			});
 		}
 	},
 	turnOnDim : function(lightId){

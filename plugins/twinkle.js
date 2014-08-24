@@ -5,7 +5,8 @@
 ****/
 var _ = require("underscore"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Twinkle Plugin");
+	logger = log4js.getLogger("Twinkle Plugin"),
+	when = require("when");
 
 // local deps
 var session = require("../session"),
@@ -28,10 +29,19 @@ var methods = {
 		var roomName = "Living Room";
 		var room = utils.findRoom(roomName);
 
+		var prms = [],
+				ids = [];
+
 		var lottery = methods.getRandomGroup(room.lights.length);
 		logger.info("Random group selected: ", lottery);
+
 		_.each(room.lights, function(lite, i){
-			hue.lights.state.get(lite.id).then(function(data){
+			ids.push(lite.id);
+		});
+
+		return when.map(ids, hue.lights.state.get).then(function(dataz){
+
+			_.each(dataz, function(d){
 				var change = {
 					"hue" : 20000,
 					"sat" : 100,
@@ -41,22 +51,23 @@ var methods = {
 					"transitiontime" : utils.converter.minToTransitionTime(configs.twinkle.transitionTime)
 				};
 
-				if(!data.state.on){
+				if(!d.state.on){
 					change["on"] = true;
 				}
 
-				if(lottery.indexOf(lite.id) > -1){
+				if(lottery.indexOf(d.id) > -1){
 					change.hue = utils.randomNumber(0, 65535);
 					change.sat = utils.randomNumber(180, 220);
 				}
 
-				logger.debug("Lite [%s] change: ", lite.id, change);
-				hue.lights.state.change(lite.id, change).otherwise(function(err){
+				logger.debug("Lite [%s] change: ", d.id, change);
+				hue.lights.state.change(d.id, change).catch(function(err){
 					logger.info("Error while attempting to setup twinkle", err);
-				});
+				});	
 			});
 			
 		});
+			
 	},
 	getRandomGroup : function(lightCount){
 		var needed = configs.twinkle.coloredLightCount,
@@ -78,12 +89,38 @@ var methods = {
 
 // Rest End Points
 server.put("/twinkle/start", function(req,res){
-	logger.info("Received /twinkle/start request");
+
 	try{
-		pubs.start();
-		res.status(200).json({"error":0});
+		pubs.start().then(function(){
+			res.status(200).json({"error":0});
+		}).catch(function(e){
+			var dets = utils.parseHueErrorResp(e);
+			res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		});
+		
 	} catch(e){
 		utils.restError("/twinkle/start", res, e);
+	}
+});
+
+server.put("/twinkle/stop", function(req,res){
+
+	try{
+		pubs.stop().then(function(){
+			res.status(200).json({"error":0});
+		}).catch(function(e){
+			var dets = utils.parseHueErrorResp(e);
+			res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		});
+		
+	} catch(e){
+		utils.restError("/twinkle/stop", res, e);
 	}
 });
 
@@ -107,28 +144,26 @@ var pubs = {
 	},
 	start : function(){
 		logger.info("Starting Twinkle..");
-		try{
-			session.state.current.mode = "twinkle";
 
-			methods.cycle();
+		session.state.current.mode = "twinkle";		
 
-			if(session.state.current.twinkle == undefined){
-				session.state.current.twinkle = {};
-			}
-
-			session.state.current.twinkle.timer = setInterval( 
-				methods.cycle,
-				utils.converter.minToMilli(configs.twinkle.cycleTime)
-			);
-
-		}catch(e){
-			logger.error("Error startin' up Twinkle ", e);
+		if(session.state.current.twinkle == undefined){
+			session.state.current.twinkle = {};
 		}
+
+		session.state.current.twinkle.timer = setInterval( 
+			methods.cycle,
+			utils.converter.minToMilli(configs.twinkle.cycleTime)
+		);
+
+		return methods.cycle();
 	},
 	stop : function(){
 		clearInterval(session.state.current.twinkle.timer);
 		session.state.current.mode = 'none';
 		logger.info("Twinkle stopped");
+
+		return when.resolve();
 	}
 };
 

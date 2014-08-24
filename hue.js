@@ -1,9 +1,8 @@
 var needle = require("needle"),
 	fs = require("fs"),
 	_ = require("underscore"),
-	log4js = require("log4js");
-
-var sun = require("suncalc"),
+	log4js = require("log4js"),
+	sun = require("suncalc"),
 	when = require("when");
 
 // local deps
@@ -52,7 +51,7 @@ main = {
 	init : function(){
 		try{
 			logger.info("Starting up moody-hues");
-console.log(session)
+
 			// Load config file, then bootstrap application
 			configManager.load().then(
 				function(conf){
@@ -146,8 +145,9 @@ console.log(session)
 	},
 	times : {
 		refresh : function(){
-			var now = new Date();
-			session.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
+			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
+			session.state.times = sun.getTimes(new Date, configs.general.latitude, configs.general.longitude);
+			console.log(session.state.times)
 		},
 		watcher : {
 			start : function(){

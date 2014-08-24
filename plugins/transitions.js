@@ -37,19 +37,26 @@ var validModes = [
 
 var methods = {
 	cycle : function(){
-		if(validModes.indexOf(session.state.current.mode) > -1){
-			var room = session.state.current.transitions.currentRoom;
-			// If no room has been initialized, grab the defualt config
-			if(room == undefined){
-				// TODO: consider pulling the first room deff if default value is missing
-				room = configs.rooms[configs.transitions.defaultRoom];
-				session.state.current.transitions.currentRoom = room;
+		try{
+
+			if(validModes.indexOf(session.state.current.mode) > -1){
+				var room = session.state.current.transitions.currentRoom;
+				// If no room has been initialized, grab the defualt config
+				if(room == undefined){
+					// TODO: consider pulling the first room deff if default value is missing
+					room = configs.rooms[configs.transitions.defaultRoom];
+					session.state.current.transitions.currentRoom = room;
+				}
+
+				return methods.prepareChange(room);
+			} else {
+				logger.debug("Invalid state for transitions [" + session.state.current.mode + "] valid ["+validModes+"]");
 			}
-			logger.info("Starting transitions");
-			methods.prepareChange(room);
-		} else {
-			logger.debug("Invalid state for transitions [" + session.state.current.mode + "] valid ["+validModes+"]");
+
+		} catch(e){
+			logger.error("Error during transition cycle: ", e);
 		}
+		
 	},
 	prepareChange : function(room){
 		logger.info("Starting transitions cycle for room [" + JSON.stringify(room) + "]");
@@ -73,17 +80,13 @@ var methods = {
 			set.push(pms);
 		});
 
-		when.all(set).then(function(){
-				methods.changeColor(room);
-			},
-			function(e){
-				logger.error("when all err ["+e+"]")
-			}
-		);
+		return when.all(set).then(function(){
+			methods.changeColor(room);
+		});
 	},
 	changeColor : function(room){
 		
-		_.each(room.lights, function(lightId){
+		_.each(room.lights, function(light){
 			var hueSet = session.state.current.transitions.hue;
 			var thisHue = utils.randomNumber(hueSet, (hueSet + configs.transitions.colorSlide));
 			// The hue value maxes out, if its greater than 65535 we want to wrap back to 0
@@ -128,9 +131,9 @@ var methods = {
 				"hue" : thisHue,
 				"transitiontime" : trans
 			};
-			logger.debug("Changing light ["+lightId+"] to ["+JSON.stringify(change)+"]");
-			hue.lights.state.change(lightId, change).then(function(){
-				logger.info("Successfully changed light ["+lightId+"]");
+			logger.debug("Changing light ["+light.id+"] to ["+JSON.stringify(change)+"]");
+			hue.lights.state.change(light.id, change).then(function(){
+				logger.info("Successfully changed light ["+light.id+"]");
 			});
 		});
 	}
@@ -150,15 +153,44 @@ var methods = {
 *		mid - enable mid saturation mode - uses configuration option configs.transitions.satLevels.mid
 *		heavy - enable heavy saturation mode - uses configuration option configs.transitions.satLevels.heavy
 ***/
-server.put("/transitions/start/:str", function(req, res, next){
+server.put("/transitions/start/:str", function(req, res){
 	try{
 		var mode = "transitions-" + req.params.str;
 		logger.info("request for /transitions/start received - transition mode ["+mode+"]");
-		session.state.current.mode = mode;
-		// methods.cycle();
-		res.status(200);
+		
+		pubs.start(mode).then(function(){
+			res.send(200, {"error":0});
+
+		}).catch(function(e){
+			var dets = utils.parseHueErrorResp(e);
+	  	logger.error("/transitions/start/:str resulted in an error", dets);
+			res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		});
+		
 	}catch(e){
-		// logger.error("Error while attempting start transitions ["+e+"]");
+		utils.restError("/transitions/start/:str", res, e);
+	}
+});
+
+server.put("/transitions/stop", function(req, res){
+	try{
+		
+		pubs.stop().then(function(){
+			res.send(200, {"error":0});
+
+		}).catch(function(e){
+			var dets = utils.parseHueErrorResp(e);
+	  	logger.error("/transitions/start/:str resulted in an error", dets);
+			res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		});
+		
+	}catch(e){
 		utils.restError("/transitions/start/:str", res, e);
 	}
 });
@@ -174,19 +206,19 @@ var pubs = {
 		configs = conf;
 		session.state.current.transitions = {};
 		session.state.current.transitions.hue = 0;
-		pubs.start();
 	},
-	start : function(){
+	start : function(mode){
 		try{
 			logger.info("Attempting to start transitions");
+			session.state.current.mode = mode ? mode : "transitions";
 			if(timers.cycles == null){
-				// run it once
-				methods.cycle();
 				// setup timer to re-run
 				timers.cycles = setInterval(function(){
 					methods.cycle();
 				},
 				utils.converter.minToMilli(configs.transitions.interval));
+				// run it once
+				return methods.cycle();
 			} else {
 				logger.error("Transitions is already started");
 			}
@@ -198,6 +230,9 @@ var pubs = {
 		logger.info("Stopping transitions");
 		clearInterval(timers.cycle);
 		timers.cycle = null;
+		session.state.current.mode = "none";
+		
+		return when.resolve();
 	}
 };
 

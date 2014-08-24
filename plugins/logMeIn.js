@@ -10,7 +10,8 @@
 var _ = require("underscore"),
 	when = require("when"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("LogMeIn");
+	logger = log4js.getLogger("LogMeIn"),
+	moment = require("moment");
 
 var hue = require("../hue-api"),
 	server = require("../express"),
@@ -23,9 +24,9 @@ var timers = {};
 
 var methods = {
 	checkTime : function(){
-		var now = new Date();
-		logger.debug("Current time ["+now+"] - sunset is at ["+session.state.times.sunsetStart+"] compare result ["+now > session.state.times.sunsetStart+"]");
-		if(now > session.state.times.sunsetStart){
+		logger.debug("Current time ["+new Date()+"] - sunset is at ["+session.state.times.sunsetStart+"] sunrise is at ["+session.state.times.sunrise+"]");
+
+		if(moment().isAfter(session.state.times.sunsetStart) ){
 			return true;
 		} else {
 			return false;
@@ -43,13 +44,14 @@ var methods = {
 			session.state.current.mode = "home";
 
 			if(methods.checkTime()){
-				rooms.roomControl.turnOn(configs.logMeIn.homeLights);
+				return rooms.roomControl.turnOn(configs.logMeIn.homeLights).then(function(){
+					// Display command status
+					blinkChange.hue = configs.logMeIn.status.colors.welcome;
+					hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);	
+				});
 
-				// Display command status
-				blinkChange.hue = configs.logMeIn.status.colors.welcome;
-				hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 			} else { 
-				console.log("Not late enough for lights yet.");
+				logger.info("Not late enough for lights yet.");
 				methods.sunsetWatcher.start();
 
 				// Display command status
@@ -57,19 +59,19 @@ var methods = {
 				hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 			}
 
-
 		} else if(state == "out"){			
 			logger.info("Goodbye! I'll just shut off lights for ya..")
-			session.state.current.mode = "notHome";
 
-			methods.roomControl.turnOff(configs.logMeIn.homeLights);
+			return rooms.roomControl.turnOff(configs.logMeIn.homeLights).then(function(){
+				session.state.current.mode = "notHome";
+				// Stop the watcher if its running
+				methods.sunsetWatcher.stop();
 
-			// Display command status
-			blinkChange.hue = configs.logMeIn.status.colors.goodbye;
-			hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
-
-			// Stop the watcher if its running
-			methods.sunsetWatcher.stop;
+				// Display command status
+				blinkChange.hue = configs.logMeIn.status.colors.goodbye;
+				hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);	
+			});
+			
 		} else {
 			logger.info("Unknown state detected ["+state+"]");
 
@@ -78,15 +80,23 @@ var methods = {
 			hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);
 		}
 
+		return when.resolve();
+
 	},
 	sunsetWatcher : {
 		start : function(){
-			logger.info("Starting up sunset watcher");
+			
 			if(timers.sunsetWatcher == undefined){
+				logger.info("Starting up sunset watcher");
 				timers.sunsetWatcher = setInterval(function(){
-					methods.sunsetWatcher.interval();
+					try{
+						methods.sunsetWatcher.interval();	
+					} catch(e){
+						logger.error("sunset watcher cycle exception", e);
+					}
+					
 				},
-				180000); // 3 mins
+				utils.converter.minToMilli(.1)); // 3 mins
 			} else {
 				logger.debug("sunset timer already started, no need to start another.");
 			}
@@ -94,12 +104,14 @@ var methods = {
 		stop : function(){
 			clearInterval(timers.sunsetWatcher);
 			timers.sunsetWatcher = undefined;
+			session.state.current.mode = 'none';
 			logger.info("sunset watcher timer has been stopped.");
 		},
 		interval : function(){
+
 			if(methods.checkTime()){
+				rooms.roomControl.turnOn(configs.logMeIn.homeLights);
 				methods.sunsetWatcher.stop();
-				methods.roomControl.turnOn(state.rooms.homeLights);
 			}
 		}
 	}
@@ -110,15 +122,22 @@ var methods = {
 * - in
 * - out
 **/ 
-server.put('/log/:state', function(req, resp){
+server.put('/log/:state', function(req, res){
 	try{
-	logger.info("routed req /log/:state",req.params)
-		methods.home(req.params.state);
-		resp.status(200).json({"error":0});
-	
+
+		methods.home(req.params.state).then(function(){
+			res.status(200).json({"error":0});
+
+		}).catch(function(e){
+			var dets = utils.parseHueErrorResp(e);
+			res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		});
+		
 	} catch(e){
-		logger.error("error while attempting to process a home event",e);
-		resp.status(500);
+		utils.restError("/log/:state", res, e);
 	}
 });
 
@@ -130,7 +149,9 @@ var pubs = {
 	init : function(d){
 		configs = d;
 	},
-	start : function(){},
+	start : function(){
+
+	},
 	stop : function(){}
 }
 

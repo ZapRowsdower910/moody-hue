@@ -61,7 +61,7 @@ var methods = {
 				});
 			});
 
-			when.all(lightPromises).then(function(){
+			return when.all(lightPromises).then(function(){
 				logger.info("Welcome home. Room has been turned on.");
 			}, function(err){
 				logger.error("One of the lights failed to turn on! ["+err+"]")
@@ -74,7 +74,7 @@ var methods = {
 			var change = {on:false};
 			var lightRsp = hue.lights.state.changeSet(lights,change);
 			
-			when.all(lightRsp).then(function(){
+			return when.all(lightRsp).then(function(){
 				logger.info("Let darkness reign! Room has been turned off.");
 			}, function(err){
 				logger.error("One of the lights failed to turn off! ["+err+"]")

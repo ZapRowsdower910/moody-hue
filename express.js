@@ -52,7 +52,7 @@ app.put('/change/mode/:newmode', function(req, resp){
 		var newMode = req.params.newmode;
 		logger.info("change mode request received. Changing mode to ["+newMode+"]");
 		session.state.current.mode = newMode;
-		resp.send(200);
+		resp.send(200, {"error":0});
 	} catch(e){
 		logger.error("Error while processing request: ", e);
 		resp.send(500);
@@ -65,19 +65,67 @@ app.put('/change/mode/:newmode', function(req, resp){
 app.get('/current/mode', function(req, resp){
 
 	try{
-		resp.setHeader('Content-Type', 'application/json');
-		resp.send(200, {"mode" : session.state.current.mode});
+		resp.send(200, {"error":0,"mode" : session.state.current.mode});
 	}catch(e){
 		logger.error("Error while processing request: ", e);
 		resp.send(500);
 	}
 });
 
+app.put("/turnOn/:light", function(req,res){
+	try{
+		var lite = req.params.light;
+		if(lite && lite > -1){
+			hue.lights.turnOff(lite).then(function(d){
+		  	res.send(200, {"error":0});
+			}).catch(function(e){
+		  	var dets = utils.parseHueErrorResp(e);
+		  	logger.error("/turnOn/:light resulted in an error", dets);
+		  	res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		  });
+			
+		} else {
+			logger.warn("[/turnOn/:light] - Invalid light to turn on [%s]", lite);
+		}
+		
+	}catch(e){
+		utils.restError("/turnOn/:light", res, e);
+	}
+});
+
+app.put("/turnOff/:light", function(req,res){
+	try{
+		var lite = req.params.light;
+		if(lite && lite > -1){
+			hue.lights.turnOff(lite).then(function(d){
+		  	res.send(200, {"error":0});
+
+			}).catch(function(e){
+		  	var dets = utils.parseHueErrorResp(e);
+		  	logger.error("/turnOff/:light resulted in an error", dets);
+		  	res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+		  });
+			
+		} else {
+			logger.warn("[/turnOff/:light] - Invalid light to turn off [%s]", lite);
+		}
+		
+	}catch(e){
+		utils.restError("/turnOff/:light", res, e);
+	}
+});
+
 /****	   *******
 **	Web pages 	**
 *****		******/
-app.get('/', function(request, response){
-	response.sendfile('./public/index.html');
+app.get('/', function(req,rsp){
+	rsp.sendfile('./public/index.html');
 });
 
 app.get('/settings', function(req,rsp){
