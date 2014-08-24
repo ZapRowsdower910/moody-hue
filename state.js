@@ -182,13 +182,7 @@
       "sat": 50,
       "bri": 230
     },
-    "homeLights": [
-      1,
-      2,
-      3,
-      4,
-      5
-    ],
+    "homeRoom":"Living Room",
     "status": {
       "light": 4,
       "colors": {

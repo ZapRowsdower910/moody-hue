@@ -36,49 +36,62 @@ var methods = {
 				hue.lights.state.change(i, change);
 			});
 		},
-		turnOn : function(lights){
-			logger.info("preparing to turn on room. room configs [" + JSON.stringify(configs.rooms) + "]");
+		turnOn : function(roomName, c){
+			logger.info("preparing to turn on room ["+roomName+"]. room configs [" + JSON.stringify(configs.rooms) + "]");
 
-			// Cycle through lights and check to see if they're already on.
-			// If they are on already, we don't want to override their current
-			// display settings. This can allow someone to login - and get more
-			// illumination without breaking the current accent / profile running
-			var lightPromises = [];
-			_.each(configs.rooms.homeLights, function(lightId){
-				hue.lights.state.isOn(lightId).then(function(isOn){
-					if(!isOn){
-						var change = _.clone(configs.rooms.homeState)	;
-						change.on = true;
-						change.transitiontime = 1;
+			var room = utils.findRoom(roomName);
 
-						hue.lights.state.isOn();
-						var lightRsp = hue.lights.state.change(lightId, change);
-						lightPromises.push(lightRsp);
-					}
-				},
-				function(err){
-					logger.error("Error while attempting to check if light [" + lightId + "] is on [%s]", err);
+
+			if(room){
+				// Cycle through lights and check to see if they're already on.
+				// If they are on already, we don't want to override their current
+				// display settings. This can allow someone to login - and get more
+				// illumination without breaking the current accent / profile running
+				var lightPromises = [];
+				_.each(room.lights, function(lite){
+					hue.lights.state.isOn(lite.id).then(function(isOn){
+						if(!isOn){
+							var change = c || {};
+							change.on = true;
+							change.transitiontime = 1;
+
+							// hue.lights.state.isOn();
+							var lightRsp = hue.lights.state.change(lite.id, change);
+							lightPromises.push(lightRsp);
+						}
+					},
+					function(err){
+						logger.error("Error while attempting to check if light [" + lite.id + "] is on [%s]", err);
+					});
 				});
-			});
 
-			return when.all(lightPromises).then(function(){
-				logger.info("Welcome home. Room has been turned on.");
-			}, function(err){
-				logger.error("One of the lights failed to turn on! ["+err+"]")
-			});
+				return when.all(lightPromises).then(function(){
+					logger.info("Welcome home. Room has been turned on.");
+				}, function(err){
+					logger.error("One of the lights failed to turn on! ["+err+"]")
+				});	
+
+			} else {
+				return when.reject("invalid room");
+			}
 			
 		},
-		turnOff : function(lights){
-			logger.info("turning off room, using lights ["+lights+"]");			
+		turnOff : function(roomName){
+			logger.info("turning off room ["+roomName+"]");	
+			var room = utils.findRoom(roomName),
+					change = {on:false};
 
-			var change = {on:false};
-			var lightRsp = hue.lights.state.changeSet(lights,change);
+			if(room){
+				return when.map(utils.lightsToIds(room.lights), hue.lights.turnOff).then(function(){
+					logger.info("Let darkness reign! Room has been turned off.");
+				}).catch(function(err){
+					logger.error("One of the lights failed to turn off! ["+err+"]")
+				});	
+
+			} else {
+				return when.reject("Invalid room");
+			}
 			
-			return when.all(lightRsp).then(function(){
-				logger.info("Let darkness reign! Room has been turned off.");
-			}, function(err){
-				logger.error("One of the lights failed to turn off! ["+err+"]")
-			});
 		}
 
 	},

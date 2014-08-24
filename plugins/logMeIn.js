@@ -44,7 +44,7 @@ var methods = {
 			session.state.current.mode = "home";
 
 			if(methods.checkTime()){
-				return rooms.roomControl.turnOn(configs.logMeIn.homeLights).then(function(){
+				return rooms.roomControl.turnOn(configs.logMeIn.homeRoom).then(function(){
 					// Display command status
 					blinkChange.hue = configs.logMeIn.status.colors.welcome;
 					hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);	
@@ -60,9 +60,16 @@ var methods = {
 			}
 
 		} else if(state == "out"){			
-			logger.info("Goodbye! I'll just shut off lights for ya..")
+			var roomArray = [];
+			logger.info("Goodbye! I'll just shut off lights for ya..");
 
-			return rooms.roomControl.turnOff(configs.logMeIn.homeLights).then(function(){
+			_.each(configs.rooms, function(r){
+				roomArray.push(r.name);
+			});
+console.log("turning off", roomArray)
+			return when.map(roomArray, rooms.roomControl.turnOff).then(function(){
+
+			// return rooms.roomControl.turnOff(configs.logMeIn.homeLights).then(function(){
 				session.state.current.mode = "notHome";
 				// Stop the watcher if its running
 				methods.sunsetWatcher.stop();

@@ -45,6 +45,19 @@ var methods = {
 		});
 
 	},
+	lightsToIds : function(lights){
+		var liteArray = [];
+
+		if(lights){
+			_.each(lights, function(l){
+				liteArray.push(l.id);
+			})	
+		} else {
+			throw "lights value [" + JSON.stringify(lights) + "] is invalid";
+		}
+
+		return liteArray;
+	},
 	colors : {
 		toXY : function(){
 
@@ -59,7 +72,7 @@ var methods = {
 	},
 	parseHueErrorResp : function(res){
 		var errs = [];
-		
+
 		_.each(res, function(e){
 			if(e.error){
 				errs.push(e.error.description);
