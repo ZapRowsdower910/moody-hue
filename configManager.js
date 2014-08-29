@@ -7,6 +7,26 @@ var configs = {},
 	local = {};
 
 var methods = {
+	loadFile : function(file, charset){
+		var dfd = when.defer(),
+				charset = charset || "utf-8";
+
+		var currentFile = fs.readFile(file,charset, function(err, data){
+			try{
+				if(err){
+					dfd.reject(err);
+				}else {
+					logger.debug("File ["+file+"] loaded successfully");
+					dfd.resolve(data);
+				}
+			} catch(e){
+				logger.error("Exception encounter while attempting to load file ["+file+"]", err);
+				dfd.reject(err);
+			}
+		});
+
+		return dfd.promise;
+	},
 	save : function(conf){
 		var dfd = when.defer();
 
@@ -31,24 +51,11 @@ var methods = {
 		return dfd.promise;
 	},
 	load : function(){
-		var dfd = when.defer();
-
-		var currentFile = fs.readFile("state.js","utf-8", function(err, data){
-			try{
-				if(err){
-					dfd.reject(err);
-				}else {
-					logger.debug("Config file successfully loaded");
-					configs = data;
-					dfd.resolve(JSON.parse(data));
-				}
-			} catch(e){
-				logger.error("Exception encounter while attempting to load config file", err);
-				dfd.reject(err);
-			}
-		})
-
-		return dfd.promise;
+		return methods.loadFile("state.js").then(function(data){
+			configs = JSON.parse(data);
+			logger.info("Configuration state file loaded successfully");
+			return configs;
+		});
 	},
 	scheduler : {
 		save : function(conf){
@@ -60,7 +67,7 @@ var methods = {
 			if(local.schedulerTimer == undefined){
 				logger.info("Starting up save scheduler");
 				local.scheduleTimer = setInterval(methods.scheduler.cycle,
-			 									utils.converter.minToMilli(1));	
+			 									utils.converter.minToMilli(10));	
 			} else {
 				logger.info("Scheduler is already started, scheduling save for next cycle");
 				methods.scheduler.save(configs);

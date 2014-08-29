@@ -59,6 +59,25 @@ define(function(){
                 g : Math.floor(g),
                 b : Math.floor(b)
             }
+        },
+        lightDragLimiter : function(pos) {
+            var X = pos.x,
+                Y = pos.y;
+
+            if(X < canvas.cache.dragLimits.minX){
+                X = canvas.cache.dragLimits.minX;
+            }
+            if(X > canvas.cache.dragLimits.maxX){
+                X = canvas.cache.dragLimits.maxX;
+            }
+            if(Y < canvas.cache.dragLimits.minY){
+                Y = canvas.cache.dragLimits.minY;
+            }
+            if(Y > canvas.cache.dragLimits.maxY){
+                Y = canvas.cache.dragLimits.maxY;
+            }
+
+            return({x:X, y:Y});
         }
 	};
 

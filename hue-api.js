@@ -85,11 +85,14 @@ var api = {
 	},
 	setup : function(){
 		var dfd = when.defer();
+		logger.debug("Requesting hue base server id from url [%s]", configs.hue.portalUrl);
 		needle.get(configs.hue.portalUrl, function(err, resp){
 			if(!err){
 				
 				var rsp = resp.body;
-				if((rsp != undefined && rsp.length) && (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != "")){
+				if((rsp != undefined && rsp.length) && 
+				   (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != ""))
+				{
 					configs.hue.baseIp = rsp[0].internalipaddress;
 					logger.info("Found local server ["+configs.hue.baseIp+"]");
 					session.state.current.isScanningForBase = false;
@@ -113,7 +116,25 @@ var api = {
 		{
 			logger.info("Setting up hue API");
 			session.state.current.scanningForBase = true;
-			return api.setup();
+
+			if(configs.hue.baseIp && configs.hue.baseIp != ""){
+				logger.info("Attempting to use previous known base server id [%s]",configs.hue.baseIp);
+
+				session.state.current.isScanningForBase = false;
+				session.state.current.isSetup = true;
+				return lights.state.get("").then(function(){
+					logger.info("Successful API message completed. Previous IP seems to be valid.");
+					return true;
+				}).catch(function(){
+					logger.warn("Test request failed. Pulling server info from public api..");
+					session.state.current.isScanningForBase = false;
+					session.state.current.isSetup = false;
+					return api.setup();
+				});
+			} else {
+				return api.setup();
+			}
+			
 		}
 		return true;
 	},
@@ -324,6 +345,7 @@ var utils = {
 
 		} else if(err.code == "ECONNRESET"){
 			logger.error("Connection reset by hue base server");
+
 		} else {
 			// Error is most likely a hue error
 			utils.apiError(err);	

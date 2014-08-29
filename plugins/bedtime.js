@@ -72,9 +72,10 @@ var methods = {
 *
 **/
 server.put('/bedtime/reading', function(req,resp){
-	logger.info("Received /bedtime/reading request");
+
 	try{
-		var bedtimeGroup = utils.findRoom("Bedroom");
+		var roomToFind = configs.bedtime.defaultRoom,
+				bedtimeGroup = utils.findRoom(roomToFind);
 
 		// TODO: we a way to either reject all defereds to the hue-api or
 		// to wrap the api in better error state handling...

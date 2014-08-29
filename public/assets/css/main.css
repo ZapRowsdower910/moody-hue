@@ -62,10 +62,10 @@ body{background:#000;}
 	border-right:0; 
 }
 .renderBoxWpr{position:relative;}
-#renderBox{border:2px solid #fff;}
+/*#renderBox{border:2px solid #fff;}*/
 .room-display{
 	width:850px;
-	height:500px;
+	height:700px;
 }
 .light-menu{
 	font-family:"elektora"; 
@@ -100,6 +100,7 @@ body{background:#000;}
 	border-top:2px solid #fff;
 	border-right:2px solid #fff;
 	border-bottom:1.5em solid #fff;
+	margin-left:10px;
 }
 .room-details ul li{
 	padding:.5em 0 .5em .3em;
@@ -119,7 +120,10 @@ body{background:#000;}
 	margin:.3em .3em 0 0;
 }
 
-.room-status-wpr{background: #000;border-top:2px solid #fff;}
+.room-status-wpr{
+	background: #000;
+	/*border-top:2px solid #fff;*/
+}
 .room-status{margin:0 auto;position:relative;width:5em;background:#000;}
 .comp{display:block;color:#fff;}
 .connection-issues{display:block;position:absolute; top:0; left:0; color:yellow;background:#666;opacity:.8;}

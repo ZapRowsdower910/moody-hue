@@ -1,8 +1,6 @@
 define(["jquery","hueUtils","socket.io","stage","lightMenu"],
 	function($,hueUtils,io,canvas,menu){
 		function Light(data){
-			// console.log("data in lite constructor",data)
-
 			var positional = data,
 				context = this,
 				color,
@@ -17,7 +15,8 @@ define(["jquery","hueUtils","socket.io","stage","lightMenu"],
 					shadowOffset: {x:0,y:0},
 					shadowOpacity: 1,
 					shadowEnabled: true,
-					id: "light-" + data.id
+					id: "light-" + data.id,
+					dragBoundFunc: hueUtils.lightDragLimiter
 				});
 
 			// Setup canvas events
@@ -106,7 +105,3 @@ define(["jquery","hueUtils","socket.io","stage","lightMenu"],
 		return Light;
 	}
 );
-
-var menu = {
-	
-};

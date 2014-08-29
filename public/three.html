@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title>My first Three.js app</title>
+    <style>canvas { width: 100%; height: 100% }</style>
+  </head>
+  <body>
+    <div id="canvas"></div>
+    <script src="http://threejs.org/build/three.min.js"></script>
+    <script>
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setSize( window.innerWidth, window.innerHeight );
+      document.body.appendChild( renderer.domElement );
+
+      // var geometry = new THREE.BoxGeometry(1,1,1);
+      // // var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+      // var material = new THREE.MeshLambertMaterial( { color:0x00ff00 } );
+      // var cube = new THREE.Mesh( geometry, material );
+      // scene.add( cube );
+
+     //  // create a point light
+     // var pointLight = new THREE.PointLight(0xFFFFFF);
+
+     //  // set its position
+     //  pointLight.position.x = 10;
+     //  pointLight.position.y = 50;
+     //  pointLight.position.z = 130;
+
+     //  // add to the scene
+     //  scene.add(pointLight);
+
+      var particleCount = 1800,
+        particles = new THREE.Geometry(),
+        pMaterial = new THREE.ParticleBasicMaterial({
+          color: 0xFFFFFF,
+          size: 20
+        });
+
+      // now create the individual particles
+      for (var p = 0; p < particleCount; p++) {
+
+        // create a particle with random
+        // position values, -250 -> 250
+        var pX = Math.random() * 500 - 250,
+            pY = Math.random() * 500 - 250,
+            pZ = Math.random() * 500 - 250,
+            particle = new THREE.Vertex(
+              new THREE.Vector3(pX, pY, pZ)
+            );
+
+        // add it to the geometry
+        particles.vertices.push(particle);
+      }
+
+      // create the particle system
+      var particleSystem = new THREE.ParticleSystem(
+          particles,
+          pMaterial);
+
+      // add it to the scene
+      scene.addChild(particleSystem);
+
+      
+
+      camera.position.z = 5;
+
+      function render() {
+        requestAnimationFrame(render);
+
+        cube.rotation.x += 0.001;
+        cube.rotation.y += 0.001;
+
+        renderer.render(scene, camera);
+      }
+      render();
+    </script>
+  </body>
+</html>

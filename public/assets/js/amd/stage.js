@@ -8,6 +8,7 @@ define(["jquery","kinetic"],
 );
 
 var canvas = {};
+    canvas.cache = {};
 
 var methods = {
 	init : function(){
@@ -17,8 +18,8 @@ var methods = {
     if(box.length){
       canvas.stage = new Kinetic.Stage({
         container: "renderBox",
-        width: 850,
-        height: 500
+        width: 1170,
+        height: 700
       });
 
       canvas.layer = new Kinetic.Layer();
