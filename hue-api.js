@@ -287,7 +287,7 @@ var lights = {
 					currentState.state.transitiontime = 10;
 					finalChange = hueUtils.filterHueStateObj(currentState.state);
 
-					logger.debug("reverting back to original state ["+JSON.stringify(change)+"]");
+					logger.debug("reverting back to original state ["+JSON.stringify(finalChange)+"]");
 
 					if(!finalChange.on){
 						delete finalChange.on;
