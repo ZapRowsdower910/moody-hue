@@ -91,14 +91,15 @@ server.put("/coment/start/:room", function(req, resp){
 		methods.startCycle(room);
 	} catch(e){
 		// logger.error("error while attempting to start coment plugin ", e);
-		utils.restError("coment/start/:room", resp, e);
+		utils.restException("coment/start/:room", resp, e);
 	}
 });
 
 var pubs = {
 	configs : {
 		name : "Coment",
-		type : "effect"
+		type : "effect",
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 		configs = conf;

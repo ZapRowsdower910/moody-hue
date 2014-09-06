@@ -67,6 +67,7 @@ main = {
 					express.hueInit(configs);
 					utils.init(configs);
 					rooms.init(configs);
+					session.init(configs);
 
 					// Setup session objects
 					session.state.timers = {};
@@ -184,18 +185,10 @@ main = {
 			interval : function(){
 				var now = new Date();
 				if(session.state.times.rolloverTime < now){
-					main.refreshTimes();
+					main.times.refresh();
 				}
 			}
 		}
-	},
-	isDarkOut : function(){	
-		var now = new Date();
-		if(now < session.state.times.sunriseEnd){
-			return true;
-		}
-
-		return false;
 	}
 };
 // Startup processing core

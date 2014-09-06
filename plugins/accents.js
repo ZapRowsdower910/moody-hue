@@ -295,7 +295,7 @@ server.put("/accents/start", function(req, resp){
 		}
 
 	} catch(e){
-		utils.restError("/accents/start", resp, e);
+		utils.restException("/accents/start", resp, e);
 	}
 	
 	return next();
@@ -304,7 +304,8 @@ server.put("/accents/start", function(req, resp){
 var pubs = {
 	configs : {
 		name : "Accents",
-		type : "effect"
+		type : "effect",
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 			logger.info("Attempting to startup Accents");

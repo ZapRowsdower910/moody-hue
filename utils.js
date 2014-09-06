@@ -1,4 +1,5 @@
 var _ = require("underscore"),
+	moment = require("moment"),
 	log4js = require("log4js"),
 	logger = log4js.getLogger("Utils");
 
@@ -66,7 +67,42 @@ var methods = {
 
 		}
 	},
-	restError : function(path, res, e){
+	isDarkOut : function(){	
+		var now = new moment();
+		if(now.isAfter(session.state.times.sunriseEnd)){
+			return true;
+		}
+
+		return false;
+	},
+	generateUUID : function(){
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
+    });
+    return uuid;
+	},
+	apiFailure : function(path, res, e){
+		logger.error("[%s] resulted in an error:", path, e || "");
+
+		if(_.isObject(e)){
+			// Custom error
+			res.send(200, e);
+
+		} else {
+			// Generic error
+			var dets = utils.parseHueErrorResp(e);
+
+			res.send(200, {
+  			"error":1001, 
+  			"errorDesc" : dets || ""
+			});
+		}
+		
+	},
+	restException : function(path, res, e){
 		logger.error("Error while processing request [%s] exception: ", path, e);
 		res.send(500);
 	},

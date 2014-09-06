@@ -66,8 +66,9 @@ var methods = {
 		start : function(){
 			if(local.schedulerTimer == undefined){
 				logger.info("Starting up save scheduler");
-				local.scheduleTimer = setInterval(methods.scheduler.cycle,
-			 									utils.converter.minToMilli(10));	
+				local.scheduleTimer = setInterval(
+            methods.scheduler.cycle,
+						utils.converter.minToMilli(configs.configManager.scheduler.cycleTime));	
 			} else {
 				logger.info("Scheduler is already started, scheduling save for next cycle");
 				methods.scheduler.save(configs);

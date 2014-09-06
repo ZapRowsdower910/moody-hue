@@ -102,7 +102,7 @@ server.put("/twinkle/start", function(req,res){
 		});
 		
 	} catch(e){
-		utils.restError("/twinkle/start", res, e);
+		utils.restException("/twinkle/start", res, e);
 	}
 });
 
@@ -112,15 +112,11 @@ server.put("/twinkle/stop", function(req,res){
 		pubs.stop().then(function(){
 			res.status(200).json({"error":0});
 		}).catch(function(e){
-			var dets = utils.parseHueErrorResp(e);
-			res.send(200, {
-	  			"error":1001, 
-	  			"errorDesc" : dets ? dets : ""
-  			});
+			utils.apiFailure("/twinkle/stop", res, e);
 		});
 		
 	} catch(e){
-		utils.restError("/twinkle/stop", res, e);
+		utils.restException("/twinkle/stop", res, e);
 	}
 });
 
@@ -129,7 +125,8 @@ server.put("/twinkle/stop", function(req,res){
 var pubs = {
 	configs : {
 		name : "Twinkle",
-		type : "effect"
+		type : "effect",
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 		local.livinColors = [];

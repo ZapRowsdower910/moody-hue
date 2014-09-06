@@ -1,3 +1,131 @@
+var _ = require("underscore"),
+		hueUtils = require("./utils"),
+		log4js = require("log4js"),
+		logger = log4js.getLogger("Session"),
+		configs;
+
+var utils = {
+	lockRoomByLevel : function(roomName, level){
+		var room = utils.findSessionRoom(roomName),
+				wasSuccessful = false;
+
+		if(room && level){
+			if(!room.fx.locked){
+				room.fx.locked = true;
+				room.fx.releaseLevel = level;
+
+				logger.info("Room ["+roomName+"] has been successfully locked");
+			} else {
+				logger.error("Room ["+roomName+"] is already locked");
+			}
+		}
+
+		return wasSuccessful;
+	},
+	lockRoomById : function(roomName, callerId){
+		var room = utils.findSessionRoom(roomName),
+				wasLocked = false,
+				sessionRoom;
+
+		if(room && callerId){
+			room.fx.locked = true;
+			room.fx.lockedId = callerId;
+
+			wasLocked = true;
+			logger.info("Room ["+roomName+"] has been successfully locked");
+		}
+
+		return wasLocked;
+	},
+	unlockRoomById : function(roomName, callerId){
+		var room = utils.findSessionRoom(roomName),
+				wasSuccessful = false;
+
+		if(room && callerId){
+			if(room.fx.locked){
+
+				if(room.fx.lockedId == callerId){
+					room.fx.locked = false;
+					room.fx.lockedId = "";
+					room.fx.releaseLevel = 0;
+
+					logger.info("Room ["+roomName+"] has been successfully unlocked");
+				} else {
+					logger.info("Id ["+callerId+"] is not authorized to unlock this room");
+				}
+
+			} else {
+				wasSuccessful = true;
+			}
+			
+		}
+
+		return wasSuccessful;
+	},
+	unlockRoomByLevel : function(roomName, level){
+		var room = utils.findSessionRoom(roomName),
+				wasSuccessful = false;
+
+		if(room && level){
+			if(room.fx.locked){
+				
+				if(level >= room.fx.releaseLevel){
+					room.fx.locked = false;
+					room.fx.lockedId = "";
+					room.fx.releaseLevel = 0;
+
+					logger.info("Room ["+roomName+"] has been successfully unlocked");
+				} else {
+					logger.info("Level ["+level+"] is not authorized to unlock this room. Level ["+room.fx.releaseLevel+"] or higher is required");
+				}
+
+			} else {
+				wasSuccessful = true;
+			}
+			
+		}
+
+		return wasSuccessful;
+	},
+	setRoomFx : function(roomName, fx, callerId, level){
+		var room = utils.findSessionRoom(roomName),
+				wasChanged = false;
+				
+		if(room && fx){
+
+			if(!room.fx.locked){
+				room.fx.current = fx;
+				wasChanged = true;
+
+			} else if(callerId && room.fx.lockedId == callerId){
+				room.fx.current = fx;
+				wasChanged = true;
+
+			} else if(level && room.fx.releaseLevel < level){
+				room.fx.current = fx;
+				wasChanged = true;
+
+			} else {
+				logger.info("Room is locked, cannot start fx ["+fx+"]");
+				wasChanged = false;
+			}
+		}
+
+		if(wasChanged){
+			logger.info("Room ["+roomName+"] fx has been changed to ["+fx+"]");
+		}
+
+		return wasChanged;
+	},
+	findSessionRoom : function(roomName){
+		return _.find(app.rooms, function(v,i){
+			if(v.name == roomName){
+				return v;
+			}
+		});
+	}
+};
+
 var app = {
 	current : {
 		rooms : {},
@@ -9,33 +137,34 @@ var app = {
 	plugins : {
 		effects : [],
 		services : []
-	}
+	},
+	rooms : []
 };
 
-var web = {
-	// rooms : [
-	// 	{
-	// 		"name" : "Living Room",
-	// 		"lights" : [
-	// 			{"id" : 1},
-	// 			{"id" : 2},
-	// 			{"id" : 3},
-	// 			{"id" : 4},
-	// 			{"id" : 5}
-	// 		]
-	// 	},
-	// 	{
-	// 		"name" : "Bedroom",
-	// 		"lights" : [
-	// 			{
-	// 				"id" : 6,
-	// 				"x" : 50,
-	// 				"y" : 50
-	// 			}
-	// 		]
-	// 	}
-	// ]
-};
+var web = {};
 
+exports.utils = utils;
 exports.state = app;
 exports.web = web;
+exports.init = function(conf){
+	configs = conf;
+	app.rooms = [];
+
+	_.each(configs.rooms, function(v,i){
+		
+		var r = {
+			id : hueUtils.generateUUID(),
+			name : v.name,
+			fx : {
+				current : "none",
+				locked : false,
+				lockedId : '',
+				releaseLevel : 0
+			}
+		};
+
+		app.rooms.push(r);
+	});
+
+	logger.warn("Setup rooms sessions.");
+}

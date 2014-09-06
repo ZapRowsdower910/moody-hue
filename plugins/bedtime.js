@@ -9,6 +9,7 @@
 *****/
 
 var _ = require("underscore"),
+	when = require("when"),
 	log4js = require("log4js"),
 	logger = log4js.getLogger("Bedtime Plugin");
 
@@ -21,48 +22,92 @@ var session = require("../session"),
 	configs;
 
 var methods = {
-	bedtimeWatcher : function(startTime){
-		logger.info("Starting up bedtime monitor:", startTime);
-		session.state.timers.bedtimeWatcher = setInterval(function(){
-			if(session.state.current.mode == "bedtime"){
-				// get now
-				var now = new Date();
-				
-				// get the end time for the next day
-				var endTime = new Date(startTime.getTime());
-				endTime.setHours(configs.bedtime.end);
-				endTime.setDate(startTime.getDate() + 1);
-				
-				if(now > endTime){
-					logger.info("Good Morning! Looks like bedtimes over");
-					// remove mode control
-					session.state.current.mode = "none";
-					// Clear timer
-					clearInterval(session.state.timers.bedtimeWatcher);
-				}
-			} else {
-				logger.info("Bedtime was canceled early? weak..");
-				clearInterval(session.state.timers.bedtimeWatcher);
-			}
+	// Not sure how I want this to work yet..
+	bedtimeWatcher : {
+		start : function(){
+			logger.info("Starting bedtime watcher");
+			session.state.timers.bedtimeWatcher = setInterval(
+        methods.bedtimeWatcher.cycle,
+      utils.converter.minToMilli(configs.bedtime.watcherInterval));
 		},
-		utils.converter.minToMilli(configs.bedtime.watcherInterval));
+		stop : function(){
+			logger.info("Stopping bedtime watcher");
+			clearInterval(session.state.timers.bedtimeWatcher);
+		},
+		cycle : function(){
+
+		}
 	},
 	sleepyTime : function(exceptions){
 		if(exceptions == undefined){
 			exceptions = [];
 		}
-		// Get all lights
-		hue.lights.state.get("").then(function(rsp){
-			_.each(rsp,function(v,i){
-				if(exceptions.indexOf(parseInt(i)) < 0){
-					hue.lights.turnOff(i);
+
+		logger.debug("turning off lights, except for: ", exceptions);
+
+		return hue.lights.getAll().then(function(d){
+
+			return when.map(d, function(lite, i){
+				// Find the exceptions
+				var turnOn = _.find(exceptions, function(v,i){
+					return v.id == lite.id;
+				});
+
+				// If this light isn't in the exception list, turnOn will be
+				// undefined - turn it off. Otherwise turn it on.
+				if(!turnOn){
+					hue.lights.turnOff(lite.id);
 				} else {
-					hue.lights.turnOn(i);
+					hue.lights.turnOn(lite.id);
 				}
 			});
-			
-			methods.bedtimeWatcher(new Date());
+
 		});
+
+	},
+	bedtime : function(){
+		var roomToFind = configs.bedtime.bedroom,
+				bedroom = utils.findRoom(roomToFind);
+
+		// TODO: we a way to either reject all defereds to the hue-api or
+		// to wrap the api in better error state handling...
+		// Exception is thrown when light is turned off during a profile change 
+		// that has 2 steps (turn on, brighten, change profile). This exception
+		// can be prevented by always first querying the light bulb state before 
+		// attempting to change it. However there should be a API exception thrown
+		// to indicate bad state, which isn't being caught anywhere for some reason.
+		if(bedroom){
+			
+			return methods.sleepyTime(bedroom.lights);
+			
+		} else {
+			logger.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
+			return when.reject({
+				"error" : 100,
+				"errorDesc" : "Invalid room"
+			});
+		}
+	},
+	wakeup : function(){
+		var roomToFind = configs.bedtime.bedroom,
+				bedroom = utils.findRoom(roomToFind);
+
+		if(bedroom){
+
+			session.state.current.mode = "none";
+			clearInterval(session.state.timers.bedtimeWatcher);
+
+			return when.map(bedroom.lights, function(lite){
+				hue.lights.turnOn(lite.id);
+			});
+			
+		} else {
+			logger.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
+			return when.reject({
+				"error" : 100,
+				"errorDesc" : "Invalid room"
+			});
+		}
 	}
 };
 
@@ -74,82 +119,54 @@ var methods = {
 server.put('/bedtime/reading', function(req,resp){
 
 	try{
-		var roomToFind = configs.bedtime.defaultRoom,
-				bedtimeGroup = utils.findRoom(roomToFind);
 
-		// TODO: we a way to either reject all defereds to the hue-api or
-		// to wrap the api in better error state handling...
-		// Exception is thrown when light is turned off during a profile change 
-		// that has 2 steps (turn on, brighten, change profile). This exception
-		// can be prevented by always first querying the light bulb state before 
-		// attempting to change it. However there should be a API exception thrown
-		// to indicate bad state, which isn't being caught anywhere for some reason.
-		if(bedtimeGroup){
-			
-			methods.sleepyTime(bedtimeGroup.lights);
+		methods.bedtime().then(function(){
 			session.state.current.mode = "bedtime";
-			resp.send(200);
-			
-		} else {
-			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms");
-			logger.debug(configs);
-			resp.send(500);
-		}
+			resp.send(200, {"error":0});
+		}).catch(function(e){
+			utils.apiFailure("/bedtime/reading", resp, e);
+		});
 		
 	} catch (e){
-		// logger.error("Error while attempting to go into bedtime mode: ", e);
-		// resp.json(500);
-
-		utils.restError("/bedtime/reading", resp, e);
+		utils.restException("/bedtime/reading", resp, e);
 	}
 });
 
 server.put('/bedtime/sleep', function(req,resp){
-	logger.info("Received /bedtime/sleep request");
 	try{
-		
-		methods.sleepyTime();
-		session.state.current.mode = "sleep";
-		
-		resp.send(200);
+
+		methods.sleepyTime().then(function(){
+			session.state.current.mode = "sleep";
+			resp.send(200, {"error":0});
+		}).catch(function(e){
+			utils.apiFailure("/bedtime/sleep", resp, e);
+		});
+
 	} catch (e){
-		// logger.error("Error while attempting to go into bedtime mode: ", e);
-		// resp.json(500);
-		utils.restError("/bedtime/sleep", resp, e);
+		utils.restException("/bedtime/sleep", resp, e);
 	}
 });
 
 server.put("/bedtime/wakeup",function(req,resp){
-	logger.info("request received /bedtime/wakeup wakeup");
 
 	try{
-
-		var bedtimeGroup = utils.findRoom("Bedroom");
-
-		if(bedtimeGroup){
-
-			_.each(bedtimeGroup.lights, function(light){
-				hue.lights.turnOn(light);
-			});
-
-			session.state.current.mode = "none";
-
-			resp.send(200);
-		} else {
-			logger.error("no bedtime room set found. Add a 'Bedtime' room under configs.rooms");
-			logger.debug(configs);
-			resp.send(500);
-		}
+		methods.wakeup().then(function(){
+			resp.send(200, {"error":0});
+		}).catch(function(e){
+			utils.apiFailure("/bedtime/wakeup", resp, e);
+		});
 
 	}catch(e){
-		utils.restError("/bedtime/wakeup", resp, e);
+		utils.restException("/bedtime/wakeup", resp, e);
 	}
 });
 
 var pubs = {
 	configs : {
 		name : "Bedtime",
-		type : "service"
+		type : "service",
+		level : 10,
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 		configs = conf;

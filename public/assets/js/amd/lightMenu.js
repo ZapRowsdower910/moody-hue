@@ -85,14 +85,13 @@ define(["jquery","hueUtils","socket.io","stage"],
 				  shadowBlur : 15
 	      });
 
-	//       var svg = new Kinetic.Path({
-	//       	fill:"rgba(255,255,255,.2)",
-	//       	data:"232.2,3 204,34 141.2,34 
-	// 122,15 39.5,15 15,38 15,71.7 30,87 30,119.2 17,132 17,203.2 40,226 40,259.5 2.2,284.2 2.9,31.2 33.8,3",
-	// 				x:70,
-	// 				y:70,
-	// 				scale:{x:2,y:2}
-	//       });
+	    //   var svg = new Kinetic.Path({
+	    //   	fill:"rgba(255,255,255,.2)",
+	    //   	data:"M232.2 3L204 34h-62.8L122 15H39.5L15 38v33.7L30 87v32.2L17 132v71.2L40 226v33.5L2.2 284.2l.7-253L33.8 3z",
+					// x:70,
+					// y:70,
+					// scale:{x:2,y:2}
+	    //   });
 
   			var frameGroup = new Kinetic.Group();
   			frameGroup.add(poly);
@@ -104,13 +103,13 @@ define(["jquery","hueUtils","socket.io","stage"],
   			canvas.frame.add(frameGroup);
 
   			staticAnim = new Kinetic.Animation(function(frame) {
- 					var gened = (frame.lastTime * frame.frameRate);
-
+ 					var gened = (frame.lastTime * frame.frameRate * Math.random());
+console.log(gened);
 					if (frame.time > 1500) {
           	staticAnim.stop();
           	frameGroup.show();
           } else {
-	 					if((gened % 2) > 1){
+	 					if(gened > 5000){
 	 						frameGroup.show();
 	 					} else {
 	 						frameGroup.hide();

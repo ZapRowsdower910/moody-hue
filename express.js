@@ -92,7 +92,7 @@ app.put("/turnOn/:light", function(req,res){
 		}
 		
 	}catch(e){
-		utils.restError("/turnOn/:light", res, e);
+		utils.restException("/turnOn/:light", res, e);
 	}
 });
 
@@ -117,7 +117,7 @@ app.put("/turnOff/:light", function(req,res){
 		}
 		
 	}catch(e){
-		utils.restError("/turnOff/:light", res, e);
+		utils.restException("/turnOff/:light", res, e);
 	}
 });
 

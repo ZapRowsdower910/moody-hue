@@ -162,16 +162,11 @@ server.put("/transitions/start/:str", function(req, res){
 			res.send(200, {"error":0});
 
 		}).catch(function(e){
-			var dets = utils.parseHueErrorResp(e);
-	  	logger.error("/transitions/start/:str resulted in an error", dets);
-			res.send(200, {
-	  			"error":1001, 
-	  			"errorDesc" : dets ? dets : ""
-  			});
+			utils.apiFailure("/transitions/start/:str", res, e);
 		});
 		
 	}catch(e){
-		utils.restError("/transitions/start/:str", res, e);
+		utils.restException("/transitions/start/:str", res, e);
 	}
 });
 
@@ -182,16 +177,11 @@ server.put("/transitions/stop", function(req, res){
 			res.send(200, {"error":0});
 
 		}).catch(function(e){
-			var dets = utils.parseHueErrorResp(e);
-	  	logger.error("/transitions/start/:str resulted in an error", dets);
-			res.send(200, {
-	  			"error":1001, 
-	  			"errorDesc" : dets ? dets : ""
-  			});
+			utils.apiFailure("/transitions/stop", res, e);
 		});
 		
 	}catch(e){
-		utils.restError("/transitions/start/:str", res, e);
+		utils.restException("/transitions/stop", res, e);
 	}
 });
 
@@ -199,7 +189,8 @@ server.put("/transitions/stop", function(req, res){
 var pubs = {
 	configs : {
 		name : "Transitions",
-		type : "effect"
+		type : "effect",
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 		logger.info("Initializing transitions plugin");
@@ -221,9 +212,11 @@ var pubs = {
 				return methods.cycle();
 			} else {
 				logger.error("Transitions is already started");
+				return when.resolve();
 			}
 		} catch(e){
 			logger.error("Error while attempting to start transitions ["+e+"]");
+			return when.reject();
 		}
 	},
 	stop : function(){
@@ -231,7 +224,7 @@ var pubs = {
 		clearInterval(timers.cycle);
 		timers.cycle = null;
 		session.state.current.mode = "none";
-		
+
 		return when.resolve();
 	}
 };

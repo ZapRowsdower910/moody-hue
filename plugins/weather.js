@@ -29,7 +29,8 @@ var instance,
 var api = {
 	configs: {
 		name : "Weather",
-		type : "service"
+		type : "service",
+		id : utils.generateUUID()
 	},
 	init : function(conf){
 		configs = conf;
@@ -241,7 +242,7 @@ server.get('/weather/show/:when', function(req, resp){
 		api.web.show(showWhen);
 		resp.send(200);
 	}catch(e){
-		utils.restError("/weather/show/:when", resp, e);
+		utils.restException("/weather/show/:when", resp, e);
 	}
 
 });
@@ -260,7 +261,7 @@ server.get('/weather/show/:when/:id', function(req, resp){
 		api.web.show(showWhen, id);
 		resp.send(200);
 	} catch(e){
-		utils.restError("/weather/show/:when/:id", resp, e);
+		utils.restException("/weather/show/:when/:id", resp, e);
 	}
 	
 });

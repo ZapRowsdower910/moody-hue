@@ -144,14 +144,15 @@ server.put('/log/:state', function(req, res){
 		});
 		
 	} catch(e){
-		utils.restError("/log/:state", res, e);
+		utils.restException("/log/:state", res, e);
 	}
 });
 
 var pubs = {
 	configs : {
 		name : "Log me in",
-		type : "service"
+		type : "service",
+		id : utils.generateUUID()
 	},
 	init : function(d){
 		configs = d;

@@ -244,6 +244,21 @@ var lights = {
 
 		return dfd.promise;
 	},
+	getAll : function(){
+		return lights.state.get("").then(function(d){
+			var rtn = [];
+			_.each(d, function(v,i){
+
+				if(_.isObject(v)){
+					v.id = i;
+					rtn.push(v);	
+				}
+				
+			});
+
+			return rtn;
+		});
+	},
 	blink : function(lightId, change, interval){
 		var dfd = when.defer();
 
