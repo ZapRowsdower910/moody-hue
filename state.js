@@ -183,6 +183,10 @@
     }
   },
   "logMeIn": {
+    "watcher":{
+      "long":80,
+      "short":5
+    },
     "homeState": {
       "hue": 12000,
       "sat": 50,

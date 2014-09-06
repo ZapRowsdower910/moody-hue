@@ -20,7 +20,7 @@ var hue = require("../hue-api"),
 	utils = require("../utils"),
 	configs;
 
-var timers = {};
+var timers = {}, local = {};
 
 var methods = {
 	checkTime : function(){
@@ -95,15 +95,23 @@ console.log("turning off", roomArray)
 			
 			if(timers.sunsetWatcher == undefined){
 				logger.info("Starting up sunset watcher");
+
+				// Startup using the long check
+				local.longCheck = true;
+
 				timers.sunsetWatcher = setInterval(function(){
 					try{
-						methods.sunsetWatcher.interval();	
+						methods.sunsetWatcher.interval();
 					} catch(e){
 						logger.error("sunset watcher cycle exception", e);
 					}
 					
 				},
-				utils.converter.minToMilli(.1)); // 3 mins
+				utils.converter.minToMilli(configs.logMeIn.watcher.long));
+
+				// After setting up out watcher we run through one interval to ensure
+				// we don't need to switch to a short check
+				methods.sunsetWatcher.interval();
 			} else {
 				logger.debug("sunset timer already started, no need to start another.");
 			}
@@ -119,10 +127,34 @@ console.log("turning off", roomArray)
 			if(methods.checkTime()){
 				rooms.roomControl.turnOn(configs.logMeIn.homeLights);
 				methods.sunsetWatcher.stop();
-			}
-		}
-	}
-}
+			} else {
+
+				if(local.longCheck){
+					// if its not sunset yet we should check to see if sunset will occur
+					// before out next long check
+					var lengthCheck = new moment().add(configs.logMeIn.watcher.long, "m");
+					if(lengthCheck.isAfter(session.state.times.sunsetStart)){
+						logger.info("Sunset will occur before next long check, switching to short checks");
+
+						clearInterval(timers.sunsetWatcher);
+
+						// Set state as short checks
+						local.longCheck = false;
+
+						// setup new interval using short checks
+						timers.sunsetWatcher = setInterval(
+	           	methods.sunsetWatcher.interval,
+	           	utils.converter.minToMilli(configs.logMeIn.watcher.short)
+	         	);
+					}
+				} // implied else - already using short check nothing to do but wait..
+				
+			} // close checkTime()
+
+		} // close interval
+
+	} // close sunsetWatcher
+};
 
 /**
 * Valid states are 

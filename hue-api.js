@@ -264,12 +264,12 @@ var lights = {
 
 		lights.state.get(lightId).then(function(currentState){
 			logger.info("Blinking light ["+lightId+"]");
-			var blinkIterations = 10;
-
-			// var originalState = _.clone(currentState.state);
+			var blinkIterations = currentState.state.on ? 10 : 11,
+					limit = 0,
+					finalChange = {},
+					blinkTimer;
 			
-			var limit = 0;
-			var blinkTimer = setInterval(function(){
+			blinkTimer = setInterval(function(){
 				
 				if(limit < blinkIterations){
 
@@ -285,9 +285,26 @@ var lights = {
 				} else {
 					clearInterval(blinkTimer);
 					currentState.state.transitiontime = 10;
-					logger.debug("reverting back to original state ["+JSON.stringify(currentState.state)+"]");
-					lights.state.change(lightId, hueUtils.filterHueStateObj(currentState.state)).then(function(){
-						logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
+					finalChange = hueUtils.filterHueStateObj(currentState.state);
+
+					logger.debug("reverting back to original state ["+JSON.stringify(change)+"]");
+
+					if(!finalChange.on){
+						delete finalChange.on;
+						logger.info("Removed on setting: ", finalChange);
+					}
+
+					// If light was originally off, change the light back to its original
+					// color / bri then turn it off
+					lights.state.change(lightId, finalChange).then(function(){
+						if(!finalChange.on){
+							lights.turnOff(lightId).then(function(){
+								logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state (off)");
+							});
+						} else {
+							logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
+						}
+						
 					},
 					function(e){
 						logger.error("blink - state change failed ["+JSON.stringify(e)+"]");
