@@ -22,52 +22,69 @@ var validModes = [
 		"LST001",	// Light Strips
 		"LLC012"	// Bloom Lamp
 	],
+	timers = {rooms : undefined},
 	local = {};
 
 var methods = {
-	cycle : function(){
-		var roomName = "Living Room";
-		var room = utils.findRoom(roomName);
+	cycle : function(roomName){
+		try{
 
-		var prms = [],
-				ids = [];
+			var room = utils.findRoom(roomName),
+					lottery,
+					prms = [],
+					ids = [];
 
-		var lottery = methods.getRandomGroup(room.lights.length);
-		logger.info("Random group selected: ", lottery);
+			if(room && room.name ){
+				if(session.utils.setRoomFx(room.name, "twinkle", null, pubs.configs.level)){
+					session.utils.lock.byLevel(room.name, pubs.configs.level);
 
-		_.each(room.lights, function(lite, i){
-			ids.push(lite.id);
-		});
+					lottery = methods.getRandomGroup(room.lights.length);
+					logger.info("Random group selected: ", lottery);
 
-		return when.map(ids, hue.lights.state.get).then(function(dataz){
+					_.each(room.lights, function(lite, i){
+						ids.push(lite.id);
+					});
 
-			_.each(dataz, function(d){
-				var change = {
-					"hue" : 20000,
-					"sat" : 100,
-					"bri" : 230,
-					// "transitiontime" : 100
-					// TODO: add/use config vals
-					"transitiontime" : utils.converter.minToTransitionTime(configs.twinkle.transitionTime)
-				};
+					return when.map(ids, hue.lights.state.get).then(function(dataz){
 
-				if(!d.state.on){
-					change["on"] = true;
+						_.each(dataz, function(d){
+							var change = {
+								"hue" : 20000,
+								"sat" : 100,
+								"bri" : 230,
+								// "transitiontime" : 100
+								// TODO: add/use config vals
+								"transitiontime" : utils.converter.minToTransitionTime(configs.twinkle.transitionTime)
+							};
+
+							if(!d.state.on){
+								change["on"] = true;
+							}
+
+							if(lottery.indexOf(d.id) > -1){
+								change.hue = utils.randomNumber(0, 65535);
+								change.sat = utils.randomNumber(180, 220);
+							}
+
+							logger.debug("Lite [%s] change: ", d.id, change);
+							hue.lights.state.change(d.id, change).catch(function(err){
+								logger.info("Error while attempting to setup twinkle", err);
+							});	
+						});
+						
+					});	
 				}
+				
+			} else {
+				logger.info("Unable to find room [%s]", JSON.stringify(room));
+			}
 
-				if(lottery.indexOf(d.id) > -1){
-					change.hue = utils.randomNumber(0, 65535);
-					change.sat = utils.randomNumber(180, 220);
-				}
-
-				logger.debug("Lite [%s] change: ", d.id, change);
-				hue.lights.state.change(d.id, change).catch(function(err){
-					logger.info("Error while attempting to setup twinkle", err);
-				});	
-			});
-			
-		});
-			
+		} catch(e){
+			logger.error("Error during twinkle cycle: ", e);
+		}
+		
+		// if we havent returned yet its an error case
+		return when.reject();
 	},
 	getRandomGroup : function(lightCount){
 		var needed = configs.twinkle.coloredLightCount,
@@ -91,15 +108,21 @@ var methods = {
 server.put("/twinkle/start", function(req,res){
 
 	try{
-		pubs.start().then(function(){
-			res.status(200).json({"error":0});
-		}).catch(function(e){
-			var dets = utils.parseHueErrorResp(e);
-			res.send(200, {
-	  			"error":1001, 
-	  			"errorDesc" : dets ? dets : ""
-  			});
-		});
+		var data = req.body;
+
+		if(data && data.room){
+			logger.info("Request to start twinkle with room [%s]", data.room);
+
+			pubs.start(data.room).then(function(){
+				res.status(200).json({"error":0});
+
+			}).catch(function(e){
+				logger.info(arguments);
+				utils.apiFailure("/twinkle/start", res, e);
+			});	
+		} else {
+			logger.info("Invalid room received [%s]", data);
+		}
 		
 	} catch(e){
 		utils.restException("/twinkle/start", res, e);
@@ -109,11 +132,20 @@ server.put("/twinkle/start", function(req,res){
 server.put("/twinkle/stop", function(req,res){
 
 	try{
-		pubs.stop().then(function(){
-			res.status(200).json({"error":0});
-		}).catch(function(e){
-			utils.apiFailure("/twinkle/stop", res, e);
-		});
+		var data = req.body;
+
+		if(data && data.room){
+			logger.info("Request to stop twinkle with room [%s]", data.room);
+
+			pubs.stop(data.room).then(function(){
+				res.status(200).json({"error":0});
+
+			}).catch(function(e){
+				utils.apiFailure("/twinkle/stop", res, e);
+			});	
+		} else {
+			logger.info("Invalid room received [%s]", data);
+		}
 		
 	} catch(e){
 		utils.restException("/twinkle/stop", res, e);
@@ -126,7 +158,8 @@ var pubs = {
 	configs : {
 		name : "Twinkle",
 		type : "effect",
-		id : utils.generateUUID()
+		id : utils.generateUUID(),
+		level : 4
 	},
 	init : function(conf){
 		local.livinColors = [];
@@ -139,28 +172,49 @@ var pubs = {
 		// which are living colors. But we may have problems finding a list of
 		// all the ids. We might be able to use type too
 	},
-	start : function(){
-		logger.info("Starting Twinkle..");
+	start : function(roomName){
+		try{
+			logger.info("Attempting to start twinkle to room ["+roomName+"]");
+			var room = utils.findRoom(roomName);
 
-		session.state.current.mode = "twinkle";		
+			if(room && timers[roomName] == undefined){
+				// setup timer to re-run
+				timers[roomName] = setInterval(function(){
+					methods.cycle(room.name)
+						.catch(function(e){
+							logger.warn("Twinkle cycle failed [%s]", JSON.stringify(e));
+						});
+				},
+				utils.converter.minToMilli(configs.twinkle.cycleTime));
+				// run it once
+				return methods.cycle(room.name);
+			} else {
+				logger.error("Twinkle is already started or the room [%s] is invalid", JSON.stringify(room));
+				return when.resolve();
+			}
 
-		if(session.state.current.twinkle == undefined){
-			session.state.current.twinkle = {};
+		} catch(e){
+			logger.error("Error while attempting to start twinkle ["+e+"]");
+			return when.reject();
 		}
 
-		session.state.current.twinkle.timer = setInterval( 
-			methods.cycle,
-			utils.converter.minToMilli(configs.twinkle.cycleTime)
-		);
-
-		return methods.cycle();
 	},
-	stop : function(){
-		clearInterval(session.state.current.twinkle.timer);
-		session.state.current.mode = 'none';
-		logger.info("Twinkle stopped");
+	stop : function(roomName){
+		var room = utils.findRoom(roomName);
 
-		return when.resolve();
+		if(room){
+			logger.info("Stopping transitions");
+			clearInterval(timers[room.name]);
+			timers[room.name] = undefined;
+			
+			session.utils.setRoomFx(room.name, "none", null, 2);
+			session.utils.unlock.byLevel(room.name, pubs.configs.level);
+
+			return when.resolve();	
+		} else {
+			return when.reject("Invalid room");
+		}
+		
 	}
 };
 

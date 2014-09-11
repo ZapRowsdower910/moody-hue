@@ -32,29 +32,29 @@ var validModes = [
 		"home"
 	],
 	timers = {
-		cycles : null
+		rooms : undefined
 	};
 
 var methods = {
-	cycle : function(){
+	cycle : function(room, mode){
 		try{
 
-			if(validModes.indexOf(session.state.current.mode) > -1){
-				var room = session.state.current.transitions.currentRoom;
-				// If no room has been initialized, grab the defualt config
-				if(room == undefined){
-					// TODO: consider pulling the first room deff if default value is missing
-					room = configs.rooms[configs.transitions.defaultRoom];
-					session.state.current.transitions.currentRoom = room;
+			if(room && room.name){
+				if(session.utils.setRoomFx(room.name, mode, null, pubs.configs.level)){
+					return methods.prepareChange(room);	
+				} else {
+					logger.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);
+					return when.reject();
 				}
-
-				return methods.prepareChange(room);
+				
 			} else {
-				logger.debug("Invalid state for transitions [" + session.state.current.mode + "] valid ["+validModes+"]");
+				logger.debug("Invalid room ["+room+"] for transitions");
+				return when.reject();
 			}
 
 		} catch(e){
 			logger.error("Error during transition cycle: ", e);
+			return when.reject();
 		}
 		
 	},
@@ -155,15 +155,22 @@ var methods = {
 ***/
 server.put("/transitions/start/:str", function(req, res){
 	try{
-		var mode = "transitions-" + req.params.str;
-		logger.info("request for /transitions/start received - transition mode ["+mode+"]");
-		
-		pubs.start(mode).then(function(){
-			res.send(200, {"error":0});
 
-		}).catch(function(e){
-			utils.apiFailure("/transitions/start/:str", res, e);
-		});
+		var mode = "transitions-" + req.params.str,
+				data = req.body;
+
+		if(data && data.room){
+			logger.info("request for /transitions/start received - transition mode ["+mode+"] room ["+data.room+"]");
+		
+			pubs.start(data.room, mode).then(function(){
+				res.send(200, {"error":0});
+
+			}).catch(function(e){
+				utils.apiFailure("/transitions/start/:str", res, e);
+			});	
+		} else {
+			logger.info("Invalid room received [%s]", data);
+		}
 		
 	}catch(e){
 		utils.restException("/transitions/start/:str", res, e);
@@ -172,13 +179,18 @@ server.put("/transitions/start/:str", function(req, res){
 
 server.put("/transitions/stop", function(req, res){
 	try{
-		
-		pubs.stop().then(function(){
-			res.send(200, {"error":0});
+		var data = req.body;
 
-		}).catch(function(e){
-			utils.apiFailure("/transitions/stop", res, e);
-		});
+		if(data && data.room){
+			pubs.stop(data.room).then(function(){
+				res.send(200, {"error":0});
+
+			}).catch(function(e){
+				utils.apiFailure("/transitions/stop", res, e);
+			});	
+		} else {
+			logger.info("Invalid room received [%s]", data);
+		}
 		
 	}catch(e){
 		utils.restException("/transitions/stop", res, e);
@@ -190,7 +202,8 @@ var pubs = {
 	configs : {
 		name : "Transitions",
 		type : "effect",
-		id : utils.generateUUID()
+		id : utils.generateUUID(),
+		level : 3
 	},
 	init : function(conf){
 		logger.info("Initializing transitions plugin");
@@ -198,34 +211,44 @@ var pubs = {
 		session.state.current.transitions = {};
 		session.state.current.transitions.hue = 0;
 	},
-	start : function(mode){
+	start : function(roomName, mode){
 		try{
-			logger.info("Attempting to start transitions");
-			session.state.current.mode = mode ? mode : "transitions";
-			if(timers.cycles == null){
+			logger.info("Attempting to start transitions on room ["+roomName+"] using mode ["+mode+"]");
+			var room = utils.findRoom(roomName);
+
+			if(room && timers[roomName] == undefined){
 				// setup timer to re-run
-				timers.cycles = setInterval(function(){
-					methods.cycle();
+				timers[roomName] = setInterval(function(){
+					methods.cycle(room, mode);
 				},
 				utils.converter.minToMilli(configs.transitions.interval));
 				// run it once
-				return methods.cycle();
+				return methods.cycle(room, mode);
 			} else {
-				logger.error("Transitions is already started");
+				logger.error("Tranisitions is already started or the room [%s] is invalid", JSON.stringify(room));
 				return when.resolve();
 			}
+
 		} catch(e){
 			logger.error("Error while attempting to start transitions ["+e+"]");
 			return when.reject();
 		}
 	},
-	stop : function(){
-		logger.info("Stopping transitions");
-		clearInterval(timers.cycle);
-		timers.cycle = null;
-		session.state.current.mode = "none";
+	stop : function(roomName){
+		var room = utils.findRoom(roomName);
 
-		return when.resolve();
+		if(room){
+			logger.info("Stopping transitions");
+			clearInterval(timers[room.name]);
+			timers[room.name] = undefined;
+			
+			session.utils.setRoomFx(room.name, "none", null, 2);
+
+			return when.resolve();	
+		} else {
+			return when.reject("Invalid room");
+		}
+		
 	}
 };
 

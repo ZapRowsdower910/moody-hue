@@ -60,6 +60,13 @@ var methods = {
 				} else {
 					hue.lights.turnOn(lite.id);
 				}
+			}).then(function(){
+				_.each(session.state.rooms, function(room,i){
+					// TODO: Consider what level to use when enabling room fx
+					session.utils.setRoomFx(room.name, "sleepy-time", null, 8);
+					// TODO: Consider the level to make this - most likely need to bump this up
+					session.utils.lock.byLevel(room.name, 8);
+				});
 			});
 
 		});
@@ -94,7 +101,11 @@ var methods = {
 
 		if(bedroom){
 
-			session.state.current.mode = "none";
+			_.each(session.state.rooms, function(v){
+				session.utils.setRoomFx(room.name, 8);
+				session.utils.unlock.byLevel(room.name, 8);
+			});
+
 			clearInterval(session.state.timers.bedtimeWatcher);
 
 			return when.map(bedroom.lights, function(lite){

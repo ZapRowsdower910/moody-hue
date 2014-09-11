@@ -5,117 +5,132 @@ var _ = require("underscore"),
 		configs;
 
 var utils = {
-	lockRoomByLevel : function(roomName, level){
-		var room = utils.findSessionRoom(roomName),
-				wasSuccessful = false;
+	lock : {
+		byLevel :function(roomName, level){
+			var room = utils.findSessionRoom(roomName),
+					wasSuccessful = false;
 
-		if(room && level){
-			if(!room.fx.locked){
+			if(room && level){
+				if(!room.fx.locked){
+					room.fx.locked = true;
+					room.fx.releaseLevel = level;
+
+					logger.info("Room ["+roomName+"] has been successfully locked");
+				} else {
+					logger.error("Room ["+roomName+"] is already locked");
+				}
+			}
+
+			return wasSuccessful;
+		},
+		byId : function(roomName, callerId){
+			var room = utils.findSessionRoom(roomName),
+					wasLocked = false,
+					sessionRoom;
+
+			if(room && callerId){
 				room.fx.locked = true;
-				room.fx.releaseLevel = level;
+				room.fx.lockedId = callerId;
 
+				wasLocked = true;
 				logger.info("Room ["+roomName+"] has been successfully locked");
-			} else {
-				logger.error("Room ["+roomName+"] is already locked");
 			}
+
+			return wasLocked;
 		}
-
-		return wasSuccessful;
 	},
-	lockRoomById : function(roomName, callerId){
-		var room = utils.findSessionRoom(roomName),
-				wasLocked = false,
-				sessionRoom;
+	unlock : {
+		byLevel : function(roomName, callerId){
+			var room = utils.findSessionRoom(roomName),
+					wasSuccessful = false;
 
-		if(room && callerId){
-			room.fx.locked = true;
-			room.fx.lockedId = callerId;
+			if(room && callerId){
+				if(room.fx.locked){
 
-			wasLocked = true;
-			logger.info("Room ["+roomName+"] has been successfully locked");
-		}
+					if(room.fx.lockedId == callerId){
+						room.fx.locked = false;
+						room.fx.lockedId = "";
+						room.fx.releaseLevel = 0;
 
-		return wasLocked;
-	},
-	unlockRoomById : function(roomName, callerId){
-		var room = utils.findSessionRoom(roomName),
-				wasSuccessful = false;
+						logger.info("Room ["+roomName+"] has been successfully unlocked");
+					} else {
+						logger.info("Id ["+callerId+"] is not authorized to unlock this room");
+					}
 
-		if(room && callerId){
-			if(room.fx.locked){
-
-				if(room.fx.lockedId == callerId){
-					room.fx.locked = false;
-					room.fx.lockedId = "";
-					room.fx.releaseLevel = 0;
-
-					logger.info("Room ["+roomName+"] has been successfully unlocked");
 				} else {
-					logger.info("Id ["+callerId+"] is not authorized to unlock this room");
+					wasSuccessful = true;
 				}
-
-			} else {
-				wasSuccessful = true;
-			}
-			
-		}
-
-		return wasSuccessful;
-	},
-	unlockRoomByLevel : function(roomName, level){
-		var room = utils.findSessionRoom(roomName),
-				wasSuccessful = false;
-
-		if(room && level){
-			if(room.fx.locked){
 				
-				if(level >= room.fx.releaseLevel){
-					room.fx.locked = false;
-					room.fx.lockedId = "";
-					room.fx.releaseLevel = 0;
+			}
 
-					logger.info("Room ["+roomName+"] has been successfully unlocked");
+			return wasSuccessful;
+		},
+		byId : function(roomName, level){
+			var room = utils.findSessionRoom(roomName),
+					wasSuccessful = false;
+
+			if(room && level){
+				if(room.fx.locked){
+					
+					if(level >= room.fx.releaseLevel){
+						room.fx.locked = false;
+						room.fx.lockedId = "";
+						room.fx.releaseLevel = 0;
+
+						logger.info("Room ["+roomName+"] has been successfully unlocked");
+					} else {
+						logger.info("Level ["+level+"] is not authorized to unlock this room. Level ["+room.fx.releaseLevel+"] or higher is required");
+					}
+
 				} else {
-					logger.info("Level ["+level+"] is not authorized to unlock this room. Level ["+room.fx.releaseLevel+"] or higher is required");
+					wasSuccessful = true;
 				}
+				
+			}
+
+			return wasSuccessful;
+		}
+	},
+	checkRoomByRoom: function(roomName, fx, callerId, level){
+		var room = utils.findSessionRoom(roomName);
+		return utils.checkRoom(room, fx, callerId, level);
+	},
+	checkRoom: function(room, fx, callerId, level){
+		var canChange = false;
+				
+		if(room && fx){
+
+			if(!room.fx.locked){
+				canChange = true;
+
+			} else if(callerId && room.fx.lockedId == callerId){
+				canChange = true;
+
+			} else if(level && room.fx.releaseLevel < level){
+				canChange = true;
 
 			} else {
-				wasSuccessful = true;
+				logger.info("Room is locked, cannot start fx ["+fx+"]");
+				canChange = false;
 			}
-			
+		} else {
+			logger.debug("Invaid room [%s] or fx [%s]", JSON.stringify(room), fx);
 		}
 
-		return wasSuccessful;
+		return canChange;
 	},
 	setRoomFx : function(roomName, fx, callerId, level){
 		var room = utils.findSessionRoom(roomName),
 				wasChanged = false;
 				
-		if(room && fx){
+		canChange = utils.checkRoom(room, fx, callerId, level);
 
-			if(!room.fx.locked){
-				room.fx.current = fx;
-				wasChanged = true;
-
-			} else if(callerId && room.fx.lockedId == callerId){
-				room.fx.current = fx;
-				wasChanged = true;
-
-			} else if(level && room.fx.releaseLevel < level){
-				room.fx.current = fx;
-				wasChanged = true;
-
-			} else {
-				logger.info("Room is locked, cannot start fx ["+fx+"]");
-				wasChanged = false;
-			}
-		}
-
-		if(wasChanged){
+		if(canChange){
 			logger.info("Room ["+roomName+"] fx has been changed to ["+fx+"]");
+			room.fx.current = fx;
 		}
 
-		return wasChanged;
+		return canChange;
 	},
 	findSessionRoom : function(roomName){
 		return _.find(app.rooms, function(v,i){

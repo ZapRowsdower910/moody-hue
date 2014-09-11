@@ -159,8 +159,8 @@
     "watcherInterval": 30
   },
   "transitions": {
-    "transitionTime": 1,
-    "interval": 5,
+    "transitionTime": 0.1,
+    "interval": 0.2,
     "defaultRoom": 0,
     "colorSlide": 7500,
     "brightness": {

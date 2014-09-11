@@ -22,7 +22,7 @@ var app = express(),
 var pub = __dirname + '/public';
 
 app.use(express.static(pub));
-// app.use(express.bodyParser());
+app.use(express.bodyParser());
 
 app.use(log4js.connectLogger(logger, { level: log4js.levels.INFO}));
 
@@ -44,28 +44,29 @@ app.hueInit = function(conf){
 **	Rest End Points  **
 *****			******/
 
-//
-// Change the active mode
-//
-app.put('/change/mode/:newmode', function(req, resp){
+app.get('/current/fx', function(req, res){
 	try{
-		var newMode = req.params.newmode;
-		logger.info("change mode request received. Changing mode to ["+newMode+"]");
-		session.state.current.mode = newMode;
-		resp.send(200, {"error":0});
-	} catch(e){
-		logger.error("Error while processing request: ", e);
-		resp.send(500);
-	}
-});
+		var data = req.body,
+				room;
 
-//
-// Returns the current status as a JSON payload
-//
-app.get('/current/mode', function(req, resp){
+		if(data && data.room){
+			room = session.utils.findSessionRoom(data.room);
 
-	try{
-		resp.send(200, {"error":0,"mode" : session.state.current.mode});
+			logger.debug("Room from session [%s]", JSON.stringify(room));
+			if(room){
+				res.send(200, {
+		    	"error": 0,
+		      "fx": room.fx.current
+		    });		
+			} else {
+				res.send(200, {
+					"error": 1001,
+					"errorDesc": "Unable to find room ["+data.room+"]"
+				});
+			}
+			
+		}
+		
 	}catch(e){
 		logger.error("Error while processing request: ", e);
 		resp.send(500);
