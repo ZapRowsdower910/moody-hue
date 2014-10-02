@@ -35,7 +35,7 @@ var methods = {
 					ids = [];
 
 			if(room && room.name ){
-				if(session.utils.setRoomFx(room.name, "twinkle", null, pubs.configs.level)){
+				if(session.utils.setRoomFx(room.name, "twinkle", pubs.stop, null, pubs.configs.level)){
 					session.utils.lock.byLevel(room.name, pubs.configs.level);
 
 					lottery = methods.getRandomGroup(room.lights.length);

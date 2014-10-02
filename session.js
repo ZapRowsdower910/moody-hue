@@ -1,4 +1,5 @@
 var _ = require("underscore"),
+		when = require("when"),
 		hueUtils = require("./utils"),
 		log4js = require("log4js"),
 		logger = log4js.getLogger("Session"),
@@ -106,7 +107,7 @@ var utils = {
 			} else if(callerId && room.fx.lockedId == callerId){
 				canChange = true;
 
-			} else if(level && room.fx.releaseLevel < level){
+			} else if(level && room.fx.releaseLevel <= level){
 				canChange = true;
 
 			} else {
@@ -119,18 +120,27 @@ var utils = {
 
 		return canChange;
 	},
-	setRoomFx : function(roomName, fx, callerId, level){
+	setRoomFx : function(roomName, fx, stopFn, callerId, level){
 		var room = utils.findSessionRoom(roomName),
 				wasChanged = false;
 				
 		canChange = utils.checkRoom(room, fx, callerId, level);
 
 		if(canChange){
-			logger.info("Room ["+roomName+"] fx has been changed to ["+fx+"]");
-			room.fx.current = fx;
+			logger.info("Stopping previous fx ["+room.fx.name+"]");
+
+			when(typeof room.fx.stop == 'function' ? room.fx.stop() : true)
+				.then(function(){
+
+				logger.info("Room ["+roomName+"] fx has been changed to ["+fx+"]");
+				room.fx.current = fx;
+				room.fx.stop = stopFn;
+
+				wasChanged = true;
+			});
 		}
 
-		return canChange;
+		return wasChanged;
 	},
 	findSessionRoom : function(roomName){
 		return _.find(app.rooms, function(v,i){
@@ -174,7 +184,8 @@ exports.init = function(conf){
 				current : "none",
 				locked : false,
 				lockedId : '',
-				releaseLevel : 0
+				releaseLevel : 0,
+				stop : undefined
 			}
 		};
 

@@ -40,7 +40,7 @@ var methods = {
 		try{
 
 			if(room && room.name){
-				if(session.utils.setRoomFx(room.name, mode, null, pubs.configs.level)){
+				if(session.utils.setRoomFx(room.name, mode, pubs.stop, null, pubs.configs.level)){
 					return methods.prepareChange(room);	
 				} else {
 					logger.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);

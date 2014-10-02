@@ -10,14 +10,11 @@ var needle = require("needle"),
 var hue = require("./hue-api"),
 	configManager = require("./configManager")
 	session = require("./session"),
-// // var server = require("./rest");
 	pluginManager = require("./pluginManager"),
 	utils = require("./utils"),
 	express = require('./express'),
-// 	extend = require("./extend"),
 	rooms = require("./rooms");
 
-// console.log(configs.general.logging.fileAppender);
 // log4js.configure({
 //   appenders: [
 //     { type: "console" },
@@ -34,15 +31,10 @@ log4js.configure({
     { type: "console" },
     {
     	"type": "file",
-        "filename": "logs/log.file",
-        "maxLogSize": 20480,
-        "backups": 3
+      "filename": "logs/log.file"
     }
   ],
-  replaceConsole: true,
-  levels : {
-	"Rest" : "DEBUG"
-  }
+  replaceConsole: true
 });
 
 var logger = log4js.getLogger("Main");
@@ -75,7 +67,6 @@ main = {
 						mode : "startup",
 						isSetup : false,
 						isScanningForBase : false
-						// timers : {}
 					};
 
 					// Check to see if app is registered on hue base
@@ -149,6 +140,8 @@ main = {
 		refresh : function(){
 			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
 			session.state.times = sun.getTimes(new Date, configs.general.latitude, configs.general.longitude);
+
+			session.state.times.rolloverTime = new moment.duration(24, "hours");
 		},
 		watcher : {
 			start : function(){
@@ -162,7 +155,7 @@ main = {
 						now = new moment(),
 						timeToWait = tomorrow.diff(now);
 
-				session.state.times.rolloverTime = new moment.duration(24, "hours")
+				session.state.times.rolloverTime = new moment.duration(24, "hours");
 
 				logger.info("Scheduling time refresh in ["+timeToWait+"]");
 				session.state.timers.timeRefresh = setTimeout(function(){
