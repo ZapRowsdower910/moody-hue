@@ -141,7 +141,7 @@ main = {
 			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
 			session.state.times = sun.getTimes(new Date, configs.general.latitude, configs.general.longitude);
 
-			session.state.times.rolloverTime = new moment.duration(24, "hours");
+			// session.state.times.rolloverTime = new moment.duration(24, "hours");
 		},
 		watcher : {
 			start : function(){
@@ -161,6 +161,7 @@ main = {
 				session.state.timers.timeRefresh = setTimeout(function(){
 					// reset times
 					main.times.watcher.interval();
+					logger.info("First day cycle completed, scheduling cycle");
 					// make sure the timer var is cleared so we can reuse it
 					clearTimeout(session.state.timers.timeRefresh);
 					// setup an interval event to allow for refreshing every 24hrs
@@ -176,10 +177,10 @@ main = {
 				clearTimeout(session.state.timers.timesRefresh);
 			},
 			interval : function(){
-				var now = new Date();
-				if(session.state.times.rolloverTime < now){
+				// var now = new Date();
+				// if(session.state.times.rolloverTime < now){
 					main.times.refresh();
-				}
+				// }
 			}
 		}
 	}

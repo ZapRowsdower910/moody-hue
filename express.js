@@ -77,7 +77,7 @@ app.put("/turnOn/:light", function(req,res){
 	try{
 		var lite = req.params.light;
 		if(lite && lite > -1){
-			hue.lights.turnOff(lite).then(function(d){
+			hue.lights.turnOn(lite).then(function(d){
 		  	res.send(200, {"error":0});
 			}).catch(function(e){
 		  	var dets = utils.parseHueErrorResp(e);
