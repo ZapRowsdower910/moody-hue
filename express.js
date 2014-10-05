@@ -125,10 +125,10 @@ app.put("/turnOff/:light", function(req,res){
 app.put("/toggle/:light", function(req, res){
 	try{
 		var lite = req.params.light;
-		if(light && light > -1){
-			hue.lights.toggle(lite).done(function(){
+		if(lite && lite > -1){
+			hue.lights.toggle(lite).then(function(d){
 				res.send(200, {"error":0});
-				
+
 			}).catch(function(){
 				var dets = utils.parseHueErrorResp(e);
 		  	logger.error("/toggle/:light resulted in an error", dets);

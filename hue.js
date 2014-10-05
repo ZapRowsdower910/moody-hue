@@ -140,8 +140,6 @@ main = {
 		refresh : function(){
 			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
 			session.state.times = sun.getTimes(new Date(), configs.general.latitude, configs.general.longitude);
-
-			// session.state.times.rolloverTime = new moment.duration(24, "hours");
 		},
 		watcher : {
 			start : function(){
@@ -151,7 +149,7 @@ main = {
 				// var now = new Date();
 				// var tomorrow = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
 				// var timeToWait = tomorrow - now;
-				var tomorrow = new moment().add(1,"days").startOf("day").add(27, "minutes"),
+				var tomorrow = new moment().add(1,"days").startOf("day").add(10, "minutes"),
 						now = new moment(),
 						timeToWait = tomorrow.diff(now);
 
