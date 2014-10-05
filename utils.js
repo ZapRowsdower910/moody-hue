@@ -18,6 +18,9 @@ var methods = {
 		},
 		hrsToMilli : function(hrs){
 			return (((hrs * 60) * 60) * 1000);
+		},
+		milliToHrs : function(milli){
+			return (((milli / 1000) / 60) / 60);
 		}
 	},
 	randomNumber : function(min,max){

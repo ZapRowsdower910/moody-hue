@@ -122,6 +122,29 @@ app.put("/turnOff/:light", function(req,res){
 	}
 });
 
+app.put("/toggle/:light", function(req, res){
+	try{
+		var lite = req.params.light;
+		if(light && light > -1){
+			hue.lights.toggle(lite).done(function(){
+				res.send(200, {"error":0});
+				
+			}).catch(function(){
+				var dets = utils.parseHueErrorResp(e);
+		  	logger.error("/toggle/:light resulted in an error", dets);
+		  	res.send(200, {
+	  			"error":1001, 
+	  			"errorDesc" : dets ? dets : ""
+  			});
+			});
+		} else {
+			logger.warn("[/toggle/:light] - Invalid light to toggle [%s]", lite);
+		}
+	} catch(e){
+		utils.restException("/toggle/:light", res, e);
+	}
+});
+
 /****	   *******
 **	Web pages 	**
 *****		******/
