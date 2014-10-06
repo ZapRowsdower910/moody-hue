@@ -127,20 +127,25 @@ var utils = {
 		canChange = utils.checkRoom(room, fx, callerId, level);
 
 		if(canChange){
-			logger.info("Stopping previous fx ["+room.fx.name+"]");
+			logger.info("Attempting to stop the previous fx ["+room.fx.current+"]");
+			// Move the stop function to a temp var, then null it out. 
+			// This will prevent the stop fn from creating an infinite loop if it tries to set
+			// the fx to 'none'
+			var stopToRun = room.fx.stop;
+			room.fx.stop = undefined;
 
-			when(typeof room.fx.stop == 'function' ? room.fx.stop() : true)
+			return when(typeof stopToRun == 'function' ? stopToRun(roomName) : true)
 				.then(function(){
 
-				logger.info("Room ["+roomName+"] fx has been changed to ["+fx+"]");
-				room.fx.current = fx;
-				room.fx.stop = stopFn;
+					room.fx.current = fx;
+					room.fx.stop = stopFn;
+					logger.info("Room ["+room.name+"] fx has been changed to ["+room.fx.current+"]");
 
-				wasChanged = true;
+					return true;
 			});
 		}
 
-		return wasChanged;
+		return false;
 	},
 	findSessionRoom : function(roomName){
 		return _.find(app.rooms, function(v,i){

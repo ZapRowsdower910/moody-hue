@@ -35,8 +35,8 @@ var methods = {
 					ids = [];
 
 			if(room && room.name ){
-				if(session.utils.setRoomFx(room.name, "twinkle", pubs.stop, null, pubs.configs.level)){
-					session.utils.lock.byLevel(room.name, pubs.configs.level);
+				// if(session.utils.setRoomFx(room.name, "twinkle", pubs.stop, null, pubs.configs.level)){
+					// session.utils.lock.byLevel(room.name, pubs.configs.level);
 
 					lottery = methods.getRandomGroup(room.lights.length);
 					logger.info("Random group selected: ", lottery);
@@ -73,7 +73,7 @@ var methods = {
 						});
 						
 					});	
-				}
+				// }
 				
 			} else {
 				logger.info("Unable to find room [%s]", JSON.stringify(room));
@@ -177,21 +177,25 @@ var pubs = {
 			logger.info("Attempting to start twinkle to room ["+roomName+"]");
 			var room = utils.findRoom(roomName);
 
-			if(room && timers[roomName] == undefined){
-				// setup timer to re-run
-				timers[roomName] = setInterval(function(){
-					methods.cycle(room.name)
-						.catch(function(e){
-							logger.warn("Twinkle cycle failed [%s]", JSON.stringify(e));
-						});
-				},
-				utils.converter.minToMilli(configs.twinkle.cycleTime));
-				// run it once
-				return methods.cycle(room.name);
-			} else {
-				logger.error("Twinkle is already started or the room [%s] is invalid", JSON.stringify(room));
-				return when.resolve();
-			}
+			return session.utils.setRoomFx(room.name, "twinkle", pubs.stop).then(function(){
+
+				if(room && timers[roomName] == undefined){
+					// setup timer to re-run
+					timers[roomName] = setInterval(function(){
+						methods.cycle(room.name)
+							.catch(function(e){
+								logger.warn("Twinkle cycle failed [%s]", JSON.stringify(e));
+							});
+					},
+					utils.converter.minToMilli(configs.twinkle.cycleTime));
+					// run it once
+					return methods.cycle(room.name);
+				} else {
+					logger.error("Twinkle is already started or the room [%s] is invalid", JSON.stringify(room));
+					return when.resolve();
+				}
+
+			});
 
 		} catch(e){
 			logger.error("Error while attempting to start twinkle ["+e+"]");
@@ -203,16 +207,16 @@ var pubs = {
 		var room = utils.findRoom(roomName);
 
 		if(room){
-			logger.info("Stopping transitions");
+			logger.info("Stopping twinkle");
 			clearInterval(timers[room.name]);
 			timers[room.name] = undefined;
 			
-			session.utils.setRoomFx(room.name, "none", null, 2);
-			session.utils.unlock.byLevel(room.name, pubs.configs.level);
+			session.utils.setRoomFx(room.name, "none");
+			// session.utils.unlock.byLevel(room.name, pubs.configs.level);
 
 			return when.resolve();	
 		} else {
-			return when.reject("Invalid room");
+			return when.reject("unable to stop twinkle, invalid room");
 		}
 		
 	}

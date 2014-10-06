@@ -40,12 +40,13 @@ var methods = {
 		try{
 
 			if(room && room.name){
-				if(session.utils.setRoomFx(room.name, mode, pubs.stop, null, pubs.configs.level)){
-					return methods.prepareChange(room);	
-				} else {
-					logger.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);
-					return when.reject();
-				}
+				return methods.prepareChange(room);	
+				// if(session.utils.setRoomFx(room.name, mode, pubs.stop, null, pubs.configs.level)){
+					
+				// } else {
+				// 	logger.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);
+				// 	return when.reject();
+				// }
 				
 			} else {
 				logger.debug("Invalid room ["+room+"] for transitions");
@@ -216,19 +217,21 @@ var pubs = {
 			logger.info("Attempting to start transitions on room ["+roomName+"] using mode ["+mode+"]");
 			var room = utils.findRoom(roomName);
 
-			if(room && timers[roomName] == undefined){
-				// setup timer to re-run
-				timers[roomName] = setInterval(function(){
-					methods.cycle(room, mode);
-				},
-				utils.converter.minToMilli(configs.transitions.interval));
-				// run it once
-				return methods.cycle(room, mode);
-			} else {
-				logger.error("Tranisitions is already started or the room [%s] is invalid", JSON.stringify(room));
-				return when.resolve();
-			}
+			return session.utils.setRoomFx(room.name, "transitions", pubs.stop).then(function(){
 
+				if(room && timers[roomName] == undefined){
+					// setup timer to re-run
+					timers[roomName] = setInterval(function(){
+						methods.cycle(room, mode);
+					},
+					utils.converter.minToMilli(configs.transitions.interval));
+					// run it once
+					return methods.cycle(room, mode);
+				} else {
+					logger.error("Tranisitions is already started or the room [%s] is invalid", JSON.stringify(room));
+					return when.resolve();
+				}
+			});
 		} catch(e){
 			logger.error("Error while attempting to start transitions ["+e+"]");
 			return when.reject();
@@ -242,11 +245,11 @@ var pubs = {
 			clearInterval(timers[room.name]);
 			timers[room.name] = undefined;
 			
-			session.utils.setRoomFx(room.name, "none", null, 2);
+			session.utils.setRoomFx(room.name, "none");
 
 			return when.resolve();	
 		} else {
-			return when.reject("Invalid room");
+			return when.reject("Unable to stop transitions, invalid room");
 		}
 		
 	}

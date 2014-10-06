@@ -44,7 +44,37 @@ app.hueInit = function(conf){
 **	Rest End Points  **
 *****			******/
 
-app.get('/current/fx', function(req, res){
+app.put('/fx/clear', function(req, res){
+	try{
+		var data = req.body,
+				room;
+
+		if(data && data.room){
+			room = session.utils.findSessionRoom(data.room);
+
+			logger.debug("Room from session [%s]", JSON.stringify(room));
+			if(room){
+				// clear out active fx
+				session.utils.setRoomFx(room.name, "none");
+
+				res.send(200, {
+		    	"error": 0
+		    });		
+			} else {
+				res.send(200, {
+					"error": 1001,
+					"errorDesc": "Unable to find room ["+data.room+"]"
+				});
+			}
+			
+		}
+	} catch(e){
+		logger.error("Error while processing request: ", e);
+		resp.send(500);	
+	}
+});
+
+app.get('/fx/current', function(req, res){
 	try{
 		var data = req.body,
 				room;

@@ -24,7 +24,7 @@
   },
   "hue": {
     "portalUrl": "https://www.meethue.com/api/nupnp",
-    "baseIp": "192.168.1.31"
+    "baseIp": "192.168.1.183"
   },
   "coment": {
     "defaultRoom": "Living Room",
