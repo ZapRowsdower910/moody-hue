@@ -44,7 +44,10 @@ var methods = {
 		},
 		stop : function(){
 			logger.info("Stopping bedtime watcher");
-			session.utils.unlock.level(room.name, 8);
+
+			_.each(session.state.rooms, function(room,i){
+				session.utils.unlock.level(room.name, 8);
+			});
 		}
 	},
 	sleepyTime : function(exceptions){
