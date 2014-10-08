@@ -10,6 +10,7 @@
 
 var _ = require("underscore"),
 	when = require("when"),
+	moment = require("moment"),
 	log4js = require("log4js"),
 	logger = log4js.getLogger("Bedtime Plugin");
 
@@ -25,17 +26,25 @@ var methods = {
 	// Not sure how I want this to work yet..
 	bedtimeWatcher : {
 		start : function(){
-			logger.info("Starting bedtime watcher");
-			session.state.timers.bedtimeWatcher = setInterval(
-        methods.bedtimeWatcher.cycle,
-      utils.converter.minToMilli(configs.bedtime.watcherInterval));
+			var now = moment(),
+					wakeupToday = moment(now).set("hour", configs.bedtime.end).endOf("hour"),
+					waitTime;
+
+			if(!now.isBefore(wakeupToday)){
+				logger.debug("Detected wakup time is tomorrow, adding a day to time");
+				wakeupToday.add(1,"days");
+			}
+
+			waitTime = wakeupToday.diff(now);
+
+			logger.info("Starting bedtime watcher, will wakeup in ["+utils.converter.milliToHrs(waitTime)+"] hrs");
+			session.state.timers.bedtimeWatcher = setTimeout(
+        methods.bedtimeWatcher.stop,
+      waitTime);
 		},
 		stop : function(){
 			logger.info("Stopping bedtime watcher");
-			clearInterval(session.state.timers.bedtimeWatcher);
-		},
-		cycle : function(){
-
+			session.utils.unlock.level(room.name, 8);
 		}
 	},
 	sleepyTime : function(exceptions){
@@ -65,8 +74,10 @@ var methods = {
 					// TODO: Consider what level to use when enabling room fx
 					session.utils.setRoomFx(room.name, "sleepy-time", null, 8);
 					// TODO: Consider the level to make this - most likely need to bump this up
-					session.utils.lock.byLevel(room.name, 8);
+					session.utils.lock.byLevel(room.name, 8);	
 				});
+
+				methods.bedtimeWatcher.start();
 			});
 
 		});

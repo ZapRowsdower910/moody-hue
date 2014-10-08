@@ -140,31 +140,30 @@ main = {
 		refresh : function(){
 			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
 			session.state.times = sun.getTimes(new Date(), configs.general.latitude, configs.general.longitude);
+			logger.debug("Time refresh complete. New times: ", session.state.times);
 		},
 		watcher : {
 			start : function(){
 				// When a watcher is started most likely it will not be at midnight. So we need to detect the time until
 				// midnight and wait for that amount of time to reset the time values. After that first time we can simply
 				// refresh the times every 24hrs.
-				// var now = new Date();
-				// var tomorrow = new Date(now.getFullYear(), now.getMonth(), (now.getDate() + 1), 0, 0, 0, 0);
-				// var timeToWait = tomorrow - now;
+
 				var tomorrow = new moment().add(1,"days").startOf("day").add(10, "minutes"),
 						now = new moment(),
 						timeToWait = tomorrow.diff(now);
 
 				session.state.times.rolloverTime = new moment.duration(24, "hours");
 
-				logger.info("Scheduling time refresh in ["+utils.converter.milliToHrs(timeToWait)+"]");
+				logger.info("Scheduling time refresh in ["+utils.converter.milliToHrs(timeToWait)+"] hrs");
 				session.state.timers.timeRefresh = setTimeout(function(){
 					// reset times
-					main.times.watcher.interval();
-					logger.info("First day cycle completed, scheduling cycle");
+					main.times.refresh();
+					logger.info("First day cycle completed, scheduling regular cycle");
 					// make sure the timer var is cleared so we can reuse it
 					clearTimeout(session.state.timers.timeRefresh);
 					// setup an interval event to allow for refreshing every 24hrs
 					session.state.timers.timeRefresh = setInterval(
-						main.times.watcher.interval,
+						main.times.refresh,
 						utils.converter.hrsToMilli(24)
 					);
 					
@@ -172,13 +171,8 @@ main = {
 				timeToWait);
 			},
 			stop : function(){
+				logger.info("Stopping suncalc time refresher")
 				clearTimeout(session.state.timers.timesRefresh);
-			},
-			interval : function(){
-				// var now = new Date();
-				// if(session.state.times.rolloverTime < now){
-					main.times.refresh();
-				// }
 			}
 		}
 	}
