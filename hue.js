@@ -138,8 +138,9 @@ main = {
 	},
 	times : {
 		refresh : function(){
-			logger.info("Setting up times using lat [%s], long [%s]",configs.general.latitude, configs.general.longitude);
-			session.state.times = sun.getTimes(new Date(), configs.general.latitude, configs.general.longitude);
+			var now = new Date();
+			logger.info("Setting up times using lat [%s], long [%s] current date [%s]",configs.general.latitude, configs.general.longitude, now);
+			session.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
 			logger.debug("Time refresh complete. New times: ", session.state.times);
 		},
 		watcher : {
