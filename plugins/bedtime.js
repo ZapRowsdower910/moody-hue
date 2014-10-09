@@ -115,7 +115,7 @@ var methods = {
 
 		if(bedroom){
 
-			_.each(session.state.rooms, function(v){
+			_.each(session.state.rooms, function(room, i){
 				session.utils.setRoomFx(room.name, 8);
 				session.utils.unlock.byLevel(room.name, 8);
 			});
