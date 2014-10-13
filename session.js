@@ -41,7 +41,7 @@ var utils = {
 		}
 	},
 	unlock : {
-		byLevel : function(roomName, callerId){
+		byId : function(roomName, callerId){
 			var room = utils.findSessionRoom(roomName),
 					wasSuccessful = false;
 
@@ -66,7 +66,7 @@ var utils = {
 
 			return wasSuccessful;
 		},
-		byId : function(roomName, level){
+		byLevel : function(roomName, level){
 			var room = utils.findSessionRoom(roomName),
 					wasSuccessful = false;
 
