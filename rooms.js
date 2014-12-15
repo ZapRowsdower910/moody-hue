@@ -105,7 +105,7 @@ var methods = {
 		
 		if(toggle == undefined){
 			_.each(room.lights, function(lite){
-				hue.lights.toggle(liteId);
+				hue.lights.toggle(lite.id);
 			});
 		} else {
 			if(toggle == true){
