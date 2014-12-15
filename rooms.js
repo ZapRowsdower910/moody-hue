@@ -119,18 +119,18 @@ var methods = {
 		
 	},
 	validateApiRequest : function(req,resp){
-		var name = req.body.name;
-		logger.info("possible room ["+room+"]");
+		var roomName = req.body.name;
+		logger.info("possible room ["+roomName+"]");
 		// Attempt to find room
-		var roomDef = utils.findRoom(room);
+		var room = utils.findRoom(roomName);
 		
-		if(roomDef != undefined || roomDef == ""){
+		if(room != undefined || room == ""){
 			resp.send(200);
-			return roomDef;
+			return room;
 		} else {
 			resp.send(500, {"error":100, "desc":"invalid room"});
-			if(roomDef == undefined){
-				throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
+			if(room == undefined){
+				throw "Room ["+JSON.stringify(roomName)+"] was not found in definitions";
 			}
 		}
 		
