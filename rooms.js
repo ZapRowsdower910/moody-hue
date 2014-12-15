@@ -97,11 +97,11 @@ var methods = {
 	},
 	toggleRoom : function(room, toggle){
 
-		var roomDef = utils.findRoom(room);
+		// var roomDef = utils.findRoom(room);
 
-		if(roomDef == undefined){
-			throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
-		}
+		// if(roomDef == undefined){
+		// 	throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
+		// }
 		
 		if(toggle == undefined){
 			_.each(room.lights, function(lite){
