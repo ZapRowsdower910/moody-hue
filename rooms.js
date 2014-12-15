@@ -131,7 +131,7 @@ var methods = {
 	}
 };
 
-server.put('/rooms/illuminate/:room',function(req,resp){
+server.put('/rooms/illuminate',function(req,resp){
 	logger.info("request received for /rooms/illuminate");
 	
 	try{
