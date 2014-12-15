@@ -103,17 +103,23 @@ var methods = {
 			throw "Room ["+JSON.stringify(room)+"] was not found in definitions";
 		}
 		
-		if(toggle == true){
-			methods.roomControl.turnOn(roomDef.lights);
-		} else if(toggle == false){
-			methods.roomControl.turnOff(roomDef.lights);
+		if(toggle == undefined){
+			_.each(room.lights, function(lite){
+				hue.lights.toggle(liteId);
+			});
 		} else {
-			logger.error("Invalid toggle value ["+toggle+"] boolean values must be used");
+			if(toggle == true){
+				methods.roomControl.turnOn(roomDef.lights);
+			} else if(toggle == false){
+				methods.roomControl.turnOff(roomDef.lights);
+			} else {
+				logger.error("Invalid toggle value ["+toggle+"] boolean values must be used");
+			}	
 		}
 		
 	},
 	validateApiRequest : function(req,resp){
-		var room = req.params.room;
+		var name = req.body.name;
 		logger.info("possible room ["+room+"]");
 		// Attempt to find room
 		var roomDef = utils.findRoom(room);
@@ -131,6 +137,18 @@ var methods = {
 	}
 };
 
+server.put('/rooms/toggle',function(req,resp){
+	logger.info("request received for /rooms/toggle");
+	
+	try{
+		var room = methods.validateApiRequest(req, resp);
+		methods.toggleRoom(room);
+	} catch(e){
+		logger.error("error toggling room ",e);
+		resp.status(500);
+	}
+});
+
 server.put('/rooms/illuminate',function(req,resp){
 	logger.info("request received for /rooms/illuminate");
 	
@@ -143,7 +161,7 @@ server.put('/rooms/illuminate',function(req,resp){
 	}
 });
 
-server.put('/rooms/darken/:room',function(req,resp){
+server.put('/rooms/darken',function(req,resp){
 	logger.info("request received for /rooms/darken");
 
 	try{
@@ -157,7 +175,7 @@ server.put('/rooms/darken/:room',function(req,resp){
 });
 
 
-server.put('/rooms/change/:room',function(req,resp){
+server.put('/rooms/change',function(req,resp){
 	logger.info("request received for /rooms/change");
 	
 	try{
