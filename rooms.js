@@ -119,7 +119,7 @@ var methods = {
 		
 	},
 	validateApiRequest : function(req,resp){
-		var roomName = req.body.name;
+		var roomName = req.body.room;
 		logger.info("possible room ["+roomName+"]");
 		// Attempt to find room
 		var room = utils.findRoom(roomName);
