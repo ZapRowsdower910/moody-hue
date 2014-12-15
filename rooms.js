@@ -109,9 +109,9 @@ var methods = {
 			});
 		} else {
 			if(toggle == true){
-				methods.roomControl.turnOn(roomDef.lights);
+				methods.roomControl.turnOn(room.lights);
 			} else if(toggle == false){
-				methods.roomControl.turnOff(roomDef.lights);
+				methods.roomControl.turnOff(room.lights);
 			} else {
 				logger.error("Invalid toggle value ["+toggle+"] boolean values must be used");
 			}	
