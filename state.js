@@ -26,6 +26,11 @@
     "portalUrl": "https://www.meethue.com/api/nupnp",
     "baseIp": "192.168.1.183"
   },
+  "mongo":{
+    "ip":"192.168.1.9",
+    "port":27017,
+    "dbName":"hue"
+  },
   "coment": {
     "defaultRoom": "Living Room",
     "profile": {
@@ -156,7 +161,19 @@
   "bedtime": {
     "bedroom": "Bedroom",
     "end": 10,
-    "watcherInterval": 30
+    "watcherInterval": 30,
+    "wakeup" :{
+      "hue":{
+        "start":0,
+        "end":25000
+      },
+      "sat":{
+        "start":255,
+        "end":45
+      },
+      "bri":150,
+      "speed" : 1.5
+    }
   },
   "transitions": {
     "transitionTime": 0.1,
@@ -282,7 +299,7 @@
       "name": "Bedroom",
       "lights": [
         {
-          "id": 6,
+          "id": 1,
           "x": 74,
           "y": 282
         }

@@ -116,14 +116,35 @@ var methods = {
 		if(bedroom){
 
 			_.each(session.state.rooms, function(room, i){
-				session.utils.setRoomFx(room.name, 8);
 				session.utils.unlock.byLevel(room.name, 8);
+				session.utils.setRoomFx(room.name, "none", undefined);
+				
 			});
 
 			clearInterval(session.state.timers.bedtimeWatcher);
 
 			return when.map(bedroom.lights, function(lite){
-				hue.lights.turnOn(lite.id);
+				return hue.lights.state.change(
+                lite.id,
+                {
+                	"on":true,
+                	"bri":1,
+                	"hue":configs.bedtime.wakeup.hue.start,
+                	"sat":configs.bedtime.wakeup.sat.start
+                });
+			}).then(function(){
+				return when.map(bedroom.lights, function(lite){
+					return hue.lights.state.change(
+					 		lite.id,
+					 		{
+					 			"bri":configs.bedtime.wakeup.bri,
+					 			"hue":configs.bedtime.wakeup.hue.end,
+					 			"sat":configs.bedtime.wakeup.sat.end,
+					 			"transitiontime": utils.converter.
+					 						minToTransitionTime(configs.bedtime.wakeup.speed)
+					 		}
+          );
+				});
 			});
 			
 		} else {
@@ -172,7 +193,7 @@ server.put('/bedtime/sleep', function(req,resp){
 	}
 });
 
-server.put("/bedtime/wakeup",function(req,resp){
+server.get("/bedtime/wakeup",function(req,resp){
 
 	try{
 		methods.wakeup().then(function(){
