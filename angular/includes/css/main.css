@@ -1,0 +1,20 @@
+/* Angular Bootstrap Fix for link styles*/
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+
+.view-port{
+	margin-top:65px;
+}
+
+
+.room-selection{
+
+}
+
+.room{ 
+	cursor: pointer;
+}
+
+.room h4{ 
+	margin:0;
+	display:inline-block;
+}

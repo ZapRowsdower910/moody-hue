@@ -1,0 +1,83 @@
+<!-- <div class="starter-template" style="margin-top:100px;" >
+  <h1>{{name}}</h1>
+  <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
+</div> -->
+
+<ul class="room-selection list-group col-md-3">
+  <il class="room list-group-item"
+      ng-repeat="r in rooms"
+      ng-click="loadRoom(r)"
+      ng-class="{'active' : activeRoom.name == r.name}"
+  >
+    <h4>{{r.name}}</h4> 
+    <div class="badge pull-right">{{r.lights.length}}</div>
+    <div class="clear"></div>
+  </il>
+</ul>
+
+<div class="room-dets col-md-9">
+  <h2>{{activeRoom.name}}</h2>
+  <tabset>
+    <tab heading="Rooms Controls">
+      <div class="row">
+        <h4>Basic</h4>
+        <ul>
+          <li>  
+              <h5>Room State</h5>
+              <div class="btn-group">
+                <label class="btn btn-primary toggle-state on" 
+                  ng-model="l.stateToggle" 
+                  btn-radio="true"
+                  ng-click="lights.turnOn(l.id)"
+                  >
+                    On
+                </label>
+
+                <label class="btn btn-primary toggle-state off"
+                  ng-model="l.stateToggle" 
+                  btn-radio="false"
+                  ng-click="lights.turnOff(l.id)"
+                  >
+                    Off
+                </label>
+              </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="row">
+        <h4>Fx</h4>
+        <ul>
+          <li ng-repeat="f in app.plugins.effects">
+            {{f.configs.name}}
+              <div class="btn-group">
+                <label class="btn btn-primary toggle-state on"
+                  ng-class="{'active': app.current.fx.fx == f.configs.name.toLowerCase()}" 
+                  ng-model="f.stateToggle" 
+                  btn-radio="true"
+                  ng-click="fx.turnOn(f.configs.name)"
+                  >
+                    On
+                </label>
+
+                <label class="btn btn-primary toggle-state off"
+                  ng-class="{'active': app.current.fx.fx != f.configs.name.toLowerCase()}" 
+                  ng-model="f.stateToggle" 
+                  btn-radio="false"
+                  ng-click="fx.turnOff()"
+                  >
+                    Off
+                </label>
+              </div>
+          </li>
+        </ul>
+      </div>
+
+    </tab>
+    <tab heading="Lights Management">
+      <ul class="list-group" 
+        lights
+        roomlights="activeRoom.lights"></ul>
+    </tab>
+  </tabset>
+</div>

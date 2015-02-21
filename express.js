@@ -3,7 +3,6 @@ var express = require("express"),
 	_ = require("underscore"),
 	when = require("when"),
 	log4js = require("log4js"),
-
 	logger = log4js.getLogger("Express");
 
 // Local Modules
@@ -19,7 +18,8 @@ var app = express(),
 	io = require("socket.io").listen(http);
 
 // Path to our public directory
-var pub = __dirname + '/public';
+// var pub = __dirname + '/public';
+var pub = __dirname + '/angular';
 
 app.use(express.static(pub));
 app.use(express.bodyParser());
@@ -44,13 +44,13 @@ app.hueInit = function(conf){
 **	Rest End Points  **
 *****			******/
 
-app.put('/fx/clear', function(req, res){
+app.put('/fx/clear/:room', function(req, res){
 	try{
-		var data = req.body,
-				room;
+		var requestedRoom = req.param("room"),
+			room;
 
-		if(data && data.room){
-			room = session.utils.findSessionRoom(data.room);
+		if(requestedRoom){
+			room = session.utils.findSessionRoom(requestedRoom);
 
 			logger.debug("Room from session [%s]", JSON.stringify(room));
 			if(room){
@@ -63,7 +63,7 @@ app.put('/fx/clear', function(req, res){
 			} else {
 				res.send(200, {
 					"error": 1001,
-					"errorDesc": "Unable to find room ["+data.room+"]"
+					"errorDesc": "Unable to find room ["+requestedRoom+"]"
 				});
 			}
 			
@@ -74,24 +74,24 @@ app.put('/fx/clear', function(req, res){
 	}
 });
 
-app.get('/fx/current', function(req, res){
+app.get('/fx/current/:room', function(req, res){
 	try{
-		var data = req.body,
+		var requestedRoom = req.param("room"),
 				room;
-
-		if(data && data.room){
-			room = session.utils.findSessionRoom(data.room);
+console.log('fx hit', requestedRoom)
+		if(requestedRoom){
+			room = session.utils.findSessionRoom(requestedRoom);
 
 			logger.debug("Room from session [%s]", JSON.stringify(room));
 			if(room){
 				res.send(200, {
-		    	"error": 0,
-		      "fx": room.fx.current
-		    });		
+	    			"error": 0,
+			    	"fx": room.fx.current
+			    });
 			} else {
 				res.send(200, {
 					"error": 1001,
-					"errorDesc": "Unable to find room ["+data.room+"]"
+					"errorDesc": "Unable to find room ["+requestedRoom+"]"
 				});
 			}
 			
@@ -161,11 +161,11 @@ app.put("/toggle/:light", function(req, res){
 
 			}).catch(function(){
 				var dets = utils.parseHueErrorResp(e);
-		  	logger.error("/toggle/:light resulted in an error", dets);
-		  	res.send(200, {
-	  			"error":1001, 
-	  			"errorDesc" : dets ? dets : ""
-  			});
+			  	logger.error("/toggle/:light resulted in an error", dets);
+			  	res.send(200, {
+		  			"error":1001, 
+		  			"errorDesc" : dets ? dets : ""
+	  			});
 			});
 		} else {
 			logger.warn("[/toggle/:light] - Invalid light to toggle [%s]", lite);
@@ -174,6 +174,55 @@ app.put("/toggle/:light", function(req, res){
 		utils.restException("/toggle/:light", res, e);
 	}
 });
+
+app.get("/lights/state/:light", function(req, res){
+	try{
+		var lite = req.params.light;
+		if(lite && lite > -1){
+			hue.lights.state.get(lite).then(function(d){
+				res.send(200, d);
+
+			}).catch(function(){
+				var dets = utils.parseHueErrorResp(e);
+			  	logger.error("/lights/state/:light resulted in an error", dets);
+			  	res.send(200, {
+		  			"error":1001, 
+		  			"errorDesc" : dets ? dets : ""
+	  			});
+			});
+		} else {
+			logger.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
+		}
+	} catch(e){
+		utils.restException("/lights/state/:light", res, e);
+	}
+});
+
+app.get("/session/app/plugins", function(req, res){
+	try{
+
+		res.send(200, session.state.plugins);
+		// if(lite && lite > -1){
+		// 	hue.lights.state.get(lite).then(function(d){
+		// 		res.send(200, d);
+
+		// 	}).catch(function(){
+		// 		var dets = utils.parseHueErrorResp(e);
+		// 	  	logger.error("/lights/state/:light resulted in an error", dets);
+		// 	  	res.send(200, {
+		//   			"error":1001, 
+		//   			"errorDesc" : dets ? dets : ""
+	 //  			});
+		// 	});
+		// } else {
+		// 	logger.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
+		// }
+	} catch(e){
+		utils.restException("/session/app/plugins", res, e);
+	}
+});
+
+app.get("/")
 
 /****	   *******
 **	Web pages 	**
@@ -184,6 +233,10 @@ app.get('/', function(req,rsp){
 
 app.get('/settings', function(req,rsp){
 	rsp.sendfile("./public/settings.html");
+});
+
+app.get('/angular', function(req,rsp){
+	rsp.sendfile("./angular/index.html");
 });
 
 

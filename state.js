@@ -1,7 +1,7 @@
 {
   "server": {
     "port": 8080,
-    "ip_addr": "192.168.1.7"
+    "ip_addr": "192.168.1.177"
   },
   "general": {
     "apiName": "huey-moods",
@@ -299,9 +299,24 @@
       "name": "Bedroom",
       "lights": [
         {
-          "id": 1,
+          "id": 6,
           "x": 74,
           "y": 282
+        }
+      ]
+    },
+    {
+      "name": "Kitchen",
+      "lights": [
+        {
+          "id": 7,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": 8,
+          "x": 0,
+          "y": 0
         }
       ]
     }

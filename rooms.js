@@ -174,7 +174,6 @@ server.put('/rooms/darken',function(req,resp){
 	
 });
 
-
 server.put('/rooms/change',function(req,resp){
 	logger.info("request received for /rooms/change");
 	
@@ -187,6 +186,26 @@ server.put('/rooms/change',function(req,resp){
 		resp.status(500);
 	}
 	
+});
+
+server.get('/rooms/all', function(req, resp){
+	logger.info("GET Request for /rooms/all");
+
+	try{
+
+		var rspObj = [];
+		_.each(configs.rooms, function(r,i){
+			logger.debug(r);
+			rspObj.push(r);
+		});
+
+		logger.info("Sending back all rooms:", rspObj);
+
+		resp.send(200, rspObj);
+	}catch(e){
+		logger.error("Error getting all rooms",e)
+		resp.status(500);
+	}
 });
 
 module.exports = methods;

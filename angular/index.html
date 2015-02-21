@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en" ng-app="MoodyHues">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<!--     <meta name="description" content="">
+    <meta name="author" content=""> -->
+    <!-- <link rel="icon" href="../../favicon.ico"> -->
+
+    <title>Starter Template for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/includes/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/includes/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <link href="/includes/css/main.css" rel="stylesheet">
+
+    <script src="/includes/js/sugar.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.3.3.js"></script>
+    
+    <script src="/includes/js/jquery-2.1.3.min.js"></script>
+    <script src="/includes/js/angular.min.js"></script>
+    <script src="/includes/js/angular-ui-router.min.js"></script>
+    <script src="/includes/js/btford-angular-socket-io.js"></script>
+    <script src="/includes/js/ui-bootstrap-tpls-0.12.0.min.js"></script>
+
+    <script src="/includes/ng-app/Services/Services.js"></script>
+    <script src="/includes/ng-app/Services/HueApi.js"></script>    
+
+    <script src="/includes/ng-app/Directives/Directives.js"></script>
+    <script src="/includes/ng-app/Directives/Light.js"></script>
+
+    <script src="/includes/ng-app/Ctrls/Ctrls.js"></script>
+    <script src="/includes/ng-app/Ctrls/RoomsCtrl.js"></script>
+    
+    <script src="/includes/ng-app/App.js"></script>    
+    
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Project name</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container view-port" ui-view></div>
+
+  </body>
+</html>

@@ -1,0 +1,36 @@
+<li class="list-group-item"
+  ng-repeat="l in roomlights"
+  >
+
+<h3 title="Id:{{l.id}}">{{l.current.name}}</h3>
+        <!-- <p>is on: {{l.state.on}}</p> -->
+        <!-- <div class="btn-group" role="group">
+          <button type="button" name="on" class="btn btn-default on toggle-state"
+            ng-click="lights.turnOn(100)">On</button>
+          <button type="button" name="off" class="btn btn-default off toggle-state"
+            ng-click="lights.turnOff(l.id)">Off</button>
+        </div> -->
+
+  <pre>{{l.stateToggle}}</pre>
+    <div class="btn-group">
+      <label class="btn btn-primary toggle-state on" 
+        ng-model="l.stateToggle" 
+        btn-radio="true"
+        ng-click="lights.turnOn(l.id)"
+        >
+          On
+      </label>
+
+      <label class="btn btn-primary toggle-state off"
+        ng-model="l.stateToggle" 
+        btn-radio="false"
+        ng-click="lights.turnOff(l.id)"
+        >
+          Off
+      </label>
+    </div>
+
+    <input id="background-color" type="color"
+    ng-model="l.color"
+    ng-change="light.colorChange(l.id, l.color)" />
+</li>
