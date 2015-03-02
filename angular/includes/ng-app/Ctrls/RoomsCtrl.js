@@ -1,7 +1,7 @@
 angular.module("Ctrls")
 	.factory("roomSocket", ['socketFactory', function(socketFactory){
 		var soc = socketFactory();
-
+		
 		return soc;
 	}])
 	.controller("RoomsCtrl", ["$scope","Hue",'socketFactory', function($scope, Hue, socketFactory){
@@ -14,17 +14,17 @@ angular.module("Ctrls")
 
 		var socket = socketFactory();
 
-		// Hue.rooms.getAll().then(function(r){
-		// 	console.log("all rooms [%o]",r)
-		// 	$scope.rooms = r;
-		// 	// $scope.activeRoom = r[0];
-		// 	$scope.loadRoom(r[0]);
-		// });
+		Hue.rooms.getAll().then(function(r){
+			console.log("all rooms [%o]",r)
+			$scope.rooms = r;
+			// $scope.activeRoom = r[0];
+			$scope.loadRoom(r[0]);
+		});
 
-		// Hue.app.getPlugins().then(function(r){
-		// 	console.log("plugins [%o]",r);
-		// 	$scope.app.plugins = r;
-		// });
+		Hue.app.getPlugins().then(function(r){
+			console.log("plugins [%o]",r);
+			$scope.app.plugins = r;
+		});
 
 		
 		$scope.loadRoom = function(room){
@@ -58,13 +58,13 @@ angular.module("Ctrls")
 		};
 
 
-		socket.on("connect", function(){
-			console.log("socket connected");
+		// socket.on("connect", function(){
+		// 	console.log("socket connected");
 
-			socket.emit("get rooms",function(data){
-				console.log(data)
-			});
-		})
+		// 	socket.emit("get rooms",function(data){
+		// 		console.log(data)
+		// 	});
+		// });
 
 	}]
 );

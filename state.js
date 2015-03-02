@@ -266,6 +266,7 @@
   ],
   "rooms": [
     {
+      "id":"001",
       "name": "Living Room",
       "lights": [
         {
@@ -296,6 +297,7 @@
       ]
     },
     {
+      "id":"002",
       "name": "Bedroom",
       "lights": [
         {
@@ -306,6 +308,7 @@
       ]
     },
     {
+      "id":"003",
       "name": "Kitchen",
       "lights": [
         {

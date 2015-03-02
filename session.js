@@ -3,6 +3,7 @@ var _ = require("underscore"),
 		hueUtils = require("./utils"),
 		log4js = require("log4js"),
 		logger = log4js.getLogger("Session"),
+		hue = require("./hue-api"),
 		configs;
 
 var utils = {
@@ -156,6 +157,33 @@ var utils = {
 	}
 };
 
+var sessionFreshTimer;
+var priv = {
+	init : function(){
+		priv.interval();
+		sessionFreshTimer = setInterval(priv.interval, 6000);
+	},
+	interval : function(){
+		hue.lights.getAll().then(function(d){
+			
+			_.each(d, function(l){
+				console.log("new light state",l);
+
+				_.each(app.rooms, function(r){
+					console.log("current rooms lights",r.lights, r);
+					_.each(r.lights, function(rl,i){
+						if(rl.id == l.id){
+							r.lights[i] = l;
+						}
+					})
+				});
+			})
+		}).catch(function(e){
+			logger.error("Error while attempting to get all lights for session refresh",e)
+		})
+	}
+}
+
 var app = {
 	current : {
 		rooms : {},
@@ -181,10 +209,11 @@ exports.init = function(conf){
 	app.rooms = [];
 
 	_.each(configs.rooms, function(v,i){
-		
+		console.log(v)
 		var r = {
 			id : hueUtils.generateUUID(),
 			name : v.name,
+			lights : v.lights,
 			fx : {
 				current : "none",
 				locked : false,
@@ -196,6 +225,8 @@ exports.init = function(conf){
 
 		app.rooms.push(r);
 	});
+
+	priv.init();
 
 	logger.warn("Setup rooms sessions.");
 }

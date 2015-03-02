@@ -21,6 +21,7 @@ var hue = require("./hue-api"),
 	// server = require("./rest"),
 	session = require("./session"),
 	utils = require("./utils"),
+	eh = require("./eventHelper"),
 	configs;
 
 var methods = {
@@ -67,6 +68,7 @@ var methods = {
 
 				return when.all(lightPromises).then(function(){
 					logger.info("Welcome home. Room has been turned on.");
+					eh.publish("room:" + room.id, session.state.current.rooms)
 				}, function(err){
 					logger.error("One of the lights failed to turn on! ["+err+"]")
 				});	

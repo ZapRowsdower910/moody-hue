@@ -1,4 +1,5 @@
-angular.module("MoodyHues", ['ui.router', 'ui.bootstrap', 'btford.socket-io', "Ctrls", "Services", "Directives"])
+angular.module("MoodyHues", 
+  ['ui.router', 'ui.bootstrap', 'btford.socket-io', "Ctrls", "Services", "Directives"])
 .run(
   [          '$rootScope', '$state', '$stateParams',
     function ($rootScope,   $state,   $stateParams) {
@@ -12,8 +13,8 @@ angular.module("MoodyHues", ['ui.router', 'ui.bootstrap', 'btford.socket-io', "C
     }
   ]
 )
-.config(["$stateProvider", "$urlRouterProvider", "socketProvider",
-	function($stateProvider, $urlRouterProvider, socketProvider){
+.config(["$stateProvider", "$urlRouterProvider", 
+	function($stateProvider, $urlRouterProvider){
 
 		$urlRouterProvider.otherwise('/');
 
@@ -24,6 +25,6 @@ angular.module("MoodyHues", ['ui.router', 'ui.bootstrap', 'btford.socket-io', "C
 				controller: "RoomsCtrl"
 			})
 
-    socketProvider.prefix('');
+    // socket.prefix('');
 	}]
 );
