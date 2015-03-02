@@ -167,10 +167,10 @@ var priv = {
 		hue.lights.getAll().then(function(d){
 			
 			_.each(d, function(l){
-				console.log("new light state",l);
+				// console.log("new light state",l);
 
 				_.each(app.rooms, function(r){
-					console.log("current rooms lights",r.lights, r);
+					// console.log("current rooms lights",r.lights, r);
 					_.each(r.lights, function(rl,i){
 						if(rl.id == l.id){
 							r.lights[i] = l;
