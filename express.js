@@ -3,7 +3,7 @@ var express = require("express"),
 	_ = require("underscore"),
 	when = require("when"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Express");
+	log = log4js.getLogger("Express");
 
 // Local Modules
 var hue = require("./hue-api"),
@@ -24,18 +24,18 @@ var pub = __dirname + '/angular';
 app.use(express.static(pub));
 app.use(express.bodyParser());
 
-app.use(log4js.connectLogger(logger, { level: log4js.levels.INFO}));
+app.use(log4js.connectLogger(log, { level: log4js.levels.INFO}));
 
 // Custom methods
 app.hueInit = function(conf){
 	configs = conf;
 
 	server = http.listen(configs.server.port, configs.server.ip_addr, function(){
-		logger.info("====================================================");
-		logger.info("=========== [ Starting up Web service ] ============");
-	  logger.info("=========== [ IP: %s         ] ===========", server.address().address);
-		logger.info("=========== [ listening on port: %s ] ============", server.address().port );
-		logger.info("====================================================");
+		log.info("====================================================");
+		log.info("=========== [ Starting up Web service ] ============");
+	  log.info("=========== [ IP: %s         ] ===========", server.address().address);
+		log.info("=========== [ listening on port: %s ] ============", server.address().port );
+		log.info("====================================================");
 	});
 };
 
@@ -52,7 +52,7 @@ app.put('/fx/clear/:room', function(req, res){
 		if(requestedRoom){
 			room = session.utils.findSessionRoom(requestedRoom);
 
-			logger.debug("Room from session [%s]", JSON.stringify(room));
+			log.debug("Room from session [%s]", JSON.stringify(room));
 			if(room){
 				// clear out active fx
 				session.utils.setRoomFx(room.name, "none");
@@ -69,7 +69,7 @@ app.put('/fx/clear/:room', function(req, res){
 			
 		}
 	} catch(e){
-		logger.error("Error while processing request: ", e);
+		log.error("Error while processing request: ", e);
 		resp.send(500);	
 	}
 });
@@ -82,7 +82,7 @@ console.log('fx hit', requestedRoom)
 		if(requestedRoom){
 			room = session.utils.findSessionRoom(requestedRoom);
 
-			logger.debug("Room from session [%s]", JSON.stringify(room));
+			log.debug("Room from session [%s]", JSON.stringify(room));
 			if(room){
 				res.send(200, {
 	    			"error": 0,
@@ -98,7 +98,7 @@ console.log('fx hit', requestedRoom)
 		}
 		
 	}catch(e){
-		logger.error("Error while processing request: ", e);
+		log.error("Error while processing request: ", e);
 		resp.send(500);
 	}
 });
@@ -109,9 +109,10 @@ app.put("/turnOn/:light", function(req,res){
 		if(lite && lite > -1){
 			hue.lights.turnOn(lite).then(function(d){
 		  	res.send(200, {"error":0});
+		  	
 			}).catch(function(e){
 		  	var dets = utils.parseHueErrorResp(e);
-		  	logger.error("/turnOn/:light resulted in an error", dets);
+		  	log.error("/turnOn/:light resulted in an error", dets);
 		  	res.send(200, {
 	  			"error":1001, 
 	  			"errorDesc" : dets ? dets : ""
@@ -119,7 +120,7 @@ app.put("/turnOn/:light", function(req,res){
 		  });
 			
 		} else {
-			logger.warn("[/turnOn/:light] - Invalid light to turn on [%s]", lite);
+			log.warn("[/turnOn/:light] - Invalid light to turn on [%s]", lite);
 		}
 		
 	}catch(e){
@@ -136,7 +137,7 @@ app.put("/turnOff/:light", function(req,res){
 
 			}).catch(function(e){
 		  	var dets = utils.parseHueErrorResp(e);
-		  	logger.error("/turnOff/:light resulted in an error", dets);
+		  	log.error("/turnOff/:light resulted in an error", dets);
 		  	res.send(200, {
 	  			"error":1001, 
 	  			"errorDesc" : dets ? dets : ""
@@ -144,7 +145,7 @@ app.put("/turnOff/:light", function(req,res){
 		  });
 			
 		} else {
-			logger.warn("[/turnOff/:light] - Invalid light to turn off [%s]", lite);
+			log.warn("[/turnOff/:light] - Invalid light to turn off [%s]", lite);
 		}
 		
 	}catch(e){
@@ -161,14 +162,14 @@ app.put("/toggle/:light", function(req, res){
 
 			}).catch(function(){
 				var dets = utils.parseHueErrorResp(e);
-			  	logger.error("/toggle/:light resulted in an error", dets);
+			  	log.error("/toggle/:light resulted in an error", dets);
 			  	res.send(200, {
 		  			"error":1001, 
 		  			"errorDesc" : dets ? dets : ""
 	  			});
 			});
 		} else {
-			logger.warn("[/toggle/:light] - Invalid light to toggle [%s]", lite);
+			log.warn("[/toggle/:light] - Invalid light to toggle [%s]", lite);
 		}
 	} catch(e){
 		utils.restException("/toggle/:light", res, e);
@@ -184,14 +185,14 @@ app.get("/lights/state/:light", function(req, res){
 
 			}).catch(function(){
 				var dets = utils.parseHueErrorResp(e);
-			  	logger.error("/lights/state/:light resulted in an error", dets);
+			  	log.error("/lights/state/:light resulted in an error", dets);
 			  	res.send(200, {
 		  			"error":1001, 
 		  			"errorDesc" : dets ? dets : ""
 	  			});
 			});
 		} else {
-			logger.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
+			log.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
 		}
 	} catch(e){
 		utils.restException("/lights/state/:light", res, e);
@@ -208,14 +209,14 @@ app.get("/session/app/plugins", function(req, res){
 
 		// 	}).catch(function(){
 		// 		var dets = utils.parseHueErrorResp(e);
-		// 	  	logger.error("/lights/state/:light resulted in an error", dets);
+		// 	  	log.error("/lights/state/:light resulted in an error", dets);
 		// 	  	res.send(200, {
 		//   			"error":1001, 
 		//   			"errorDesc" : dets ? dets : ""
 	 //  			});
 		// 	});
 		// } else {
-		// 	logger.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
+		// 	log.warn("[/lights/state/:light] - Invalid light to get state [%s]", lite);
 		// }
 	} catch(e){
 		utils.restException("/session/app/plugins", res, e);
@@ -264,15 +265,15 @@ var roomMonitor = {
 					cycleTime = 5000;
 
 			if (room != undefined){
-				logger.info("Starting up room refresh monitor for room [%s]", room.name);
+				log.info("Starting up room refresh monitor for room [%s]", room.name);
 
 				if(roomMonitor.monitors[room.name] == undefined){
 					roomMonitor.monitors[room.name] = {};
 
 					_.each(room.lights, function(v,i){
-						// logger.info("light [%s] cycling in [%s]", v, , cycleTime);
+						// log.info("light [%s] cycling in [%s]", v, , cycleTime);
 						setTimeout(function(){
-							logger.info("Setuping up light [%s] in [%s]ms", v.id, cycleDelay)
+							log.info("Setuping up light [%s] in [%s]ms", v.id, cycleDelay)
 								roomMonitor.monitors[room.name][v.id] = setInterval(function(){
 									roomMonitor.cycle.call(roomMonitor, v.id, socket);
 								},
@@ -282,10 +283,10 @@ var roomMonitor = {
 						
 					});
 
-					logger.info("room monitor obj", roomMonitor.monitors)
+					log.info("room monitor obj", roomMonitor.monitors)
 				}
 			} else {
-				logger.error("Unable to find room [%s] to setup a state monitor", socket.room);
+				log.error("Unable to find room [%s] to setup a state monitor", socket.room);
 			}
 
 		}
@@ -294,7 +295,7 @@ var roomMonitor = {
 		var lightData = [],
 				prmsCollection = [];
 
-		logger.debug("update cycle for light [%s] for room [%s]",lightId,socket.room);
+		log.debug("update cycle for light [%s] for room [%s]",lightId,socket.room);
 
 		hue.lights.state.get(lightId).then(
 			function(d){
@@ -311,7 +312,7 @@ var roomMonitor = {
 };
 
 index.on('connection', function (socket) {
-	logger.info("New client connection established on /index");	
+	log.info("New client connection established on /index");	
 
     socket.on("join room", function(room,fn){
 
@@ -319,7 +320,7 @@ index.on('connection', function (socket) {
     	   (roomMonitor.monitors != undefined &&
     	   roomMonitor.monitors[socket.room] == undefined))
     	{
-    		logger.info("Joining room [%s]",room.name);
+    		log.info("Joining room [%s]",room.name);
 
 	    	var room = _.find(configs.rooms, function(v,i){
 	    		return v.name == room.name;
@@ -343,7 +344,7 @@ index.on('connection', function (socket) {
     });
 
 	socket.on("move light", function (data){
-		logger.info("received data on request 'move light': ",data);
+		log.info("received data on request 'move light': ",data);
 
 		if(data){
 			var room = utils.findRoom(socket.room);
@@ -356,7 +357,7 @@ index.on('connection', function (socket) {
 				index.x = data.x;
 				index.y = data.y;
 
-				logger.info("Rooms: ",JSON.stringify(configs.rooms));
+				log.info("Rooms: ",JSON.stringify(configs.rooms));
 
 				configManager.scheduler.save(configs);
 
@@ -376,7 +377,7 @@ index.on('connection', function (socket) {
 	});
 
 	socket.on("get rooms", function(data, fn){
-		logger.info("socket request 'get rooms' received");
+		log.info("socket request 'get rooms' received");
 		// console.log(configs.rooms, arguments);
 		var dets = {
 			effects : session.state.plugins.effects,
@@ -386,7 +387,7 @@ index.on('connection', function (socket) {
 	});
 
 	socket.on("change bri", function(data,fn){
-		logger.info("change bri req", data);
+		log.info("change bri req", data);
 
 		try{
 
@@ -397,17 +398,17 @@ index.on('connection', function (socket) {
 			});
 
 		}catch(e){
-			logger.error("change bri exception",e)
+			log.error("change bri exception",e)
 		}
 		
 	});
 
 	socket.on("disconnect", function(){
-		logger.info("Client dropped");
+		log.info("Client dropped");
 	});
 
 	socket.on("reconnect", function(){
-		logger.info("Client reconnected");
+		log.info("Client reconnected");
 	});
 
 });
@@ -418,7 +419,7 @@ index.on('connection', function (socket) {
 //
 var settings = io.of("/pages/settings");
 settings.on("connection", function(socket){
-	logger.info("Client connected to /settings");
+	log.info("Client connected to /settings");
 
 	socket.emit("load configs", configs);
 });

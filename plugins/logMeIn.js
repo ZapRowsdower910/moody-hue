@@ -10,7 +10,7 @@
 var _ = require("underscore"),
 	when = require("when"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("LogMeIn"),
+	log = log4js.getLogger("LogMeIn"),
 	moment = require("moment");
 
 var hue = require("../hue-api"),
@@ -24,7 +24,7 @@ var timers = {}, local = {};
 
 var methods = {
 	checkTime : function(){
-		logger.debug("Current time ["+new Date()+"] - sunset is at ["+session.state.times.sunsetStart+"] sunrise is at ["+session.state.times.sunrise+"]");
+		log.debug("Current time ["+new Date()+"] - sunset is at ["+session.state.times.sunsetStart+"] sunrise is at ["+session.state.times.sunrise+"]");
 
 		if(moment().isAfter(session.state.times.sunsetStart) ){
 			return true;
@@ -33,17 +33,18 @@ var methods = {
 		}
 	},
 	home : function(state){
-		logger.info("user logging ["+state+"]");
+		log.info("user logging ["+state+"]");
 
 		var blinkChange = {
 			sat : 255
 		};
 
 		if(state == "in"){
-			logger.info("Log in request detected.");
+			log.info("Log in request detected.");
 			session.state.current.mode = "home";
 
 			if(methods.checkTime()){
+				log.info("Welcome home, lemme get the lights for you..");
 				return rooms.roomControl.turnOn(configs.logMeIn.homeRoom).then(function(){
 					// Display command status
 					blinkChange.hue = configs.logMeIn.status.colors.welcome;
@@ -51,7 +52,7 @@ var methods = {
 				});
 
 			} else { 
-				logger.info("Not late enough for lights yet.");
+				log.info("Not late enough for lights yet.");
 				methods.sunsetWatcher.start();
 
 				// Display command status
@@ -61,7 +62,7 @@ var methods = {
 
 		} else if(state == "out"){			
 			var roomArray = [];
-			logger.info("Goodbye! I'll just shut off lights for ya..");
+			log.info("Goodbye! I'll just shut off lights for ya..");
 
 			_.each(configs.rooms, function(r){
 				roomArray.push(r.name);
@@ -80,7 +81,7 @@ console.log("turning off", roomArray)
 			});
 			
 		} else {
-			logger.info("Unknown state detected ["+state+"]");
+			log.info("Unknown state detected ["+state+"]");
 
 			// Display command status
 			blinkChange.hue = configs.logMeIn.status.colors.unknown;
@@ -94,7 +95,7 @@ console.log("turning off", roomArray)
 		start : function(){
 			
 			if(timers.sunsetWatcher == undefined){
-				logger.info("Starting up sunset watcher");
+				log.info("Starting up sunset watcher");
 
 				// Startup using the long check
 				local.longCheck = true;
@@ -103,30 +104,42 @@ console.log("turning off", roomArray)
 					try{
 						methods.sunsetWatcher.interval();
 					} catch(e){
-						logger.error("sunset watcher cycle exception", e);
+						log.error("sunset watcher cycle exception", e);
 					}
 					
 				},
-				utils.converter.minToMilli(configs.logMeIn.watcher.long));
+				// utils.converter.minToMilli(configs.logMeIn.watcher.long));
+				5);
 
 				// After setting up out watcher we run through one interval to ensure
 				// we don't need to switch to a short check
 				methods.sunsetWatcher.interval();
 			} else {
-				logger.debug("sunset timer already started, no need to start another.");
+				log.debug("sunset timer already started, no need to start another.");
 			}
 		},
 		stop : function(){
 			clearInterval(timers.sunsetWatcher);
 			timers.sunsetWatcher = undefined;
 			session.state.current.mode = 'none';
-			logger.info("sunset watcher timer has been stopped.");
+			log.info("sunset watcher timer has been stopped.");
 		},
 		interval : function(){
 
 			if(methods.checkTime()){
-				rooms.roomControl.turnOn(configs.logMeIn.homeLights);
+
+				rooms.roomControl.turnOn(configs.logMeIn.homeRoom).then(function(){
+					// Display command status
+					var blinkChange = {
+						sat : 255,
+						hue : configs.logMeIn.status.colors.timesUp
+					};
+
+					hue.lights.blink(configs.logMeIn.status.light, blinkChange, 1000);	
+				});
+
 				methods.sunsetWatcher.stop();
+
 			} else {
 
 				if(local.longCheck){
@@ -134,7 +147,7 @@ console.log("turning off", roomArray)
 					// before out next long check
 					var lengthCheck = new moment().add(configs.logMeIn.watcher.long, "m");
 					if(lengthCheck.isAfter(session.state.times.sunsetStart)){
-						logger.info("Sunset will occur before next long check, switching to short checks");
+						log.info("Sunset will occur before next long check, switching to short checks");
 
 						clearInterval(timers.sunsetWatcher);
 

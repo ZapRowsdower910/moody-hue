@@ -68,7 +68,8 @@ var methods = {
 
 				return when.all(lightPromises).then(function(){
 					logger.info("Welcome home. Room has been turned on.");
-					eh.publish("room:" + room.id, session.state.current.rooms)
+					console.log(eh);
+					eh.publish("room:" + room.id, session.state.current.rooms);
 				}, function(err){
 					logger.error("One of the lights failed to turn on! ["+err+"]")
 				});	
@@ -86,6 +87,8 @@ var methods = {
 			if(room){
 				return when.map(utils.lightsToIds(room.lights), hue.lights.turnOff).then(function(){
 					logger.info("Let darkness reign! Room has been turned off.");
+					console.log(eh);
+					eh.publish("room:" + room.id, session.state.current.rooms);
 				}).catch(function(err){
 					logger.error("One of the lights failed to turn off! ["+err+"]")
 				});	
@@ -106,6 +109,8 @@ var methods = {
 		// }
 		
 		if(toggle == undefined){
+			// eh.publish("room:" + room.id, session.state.current.rooms);
+			eh.publish("room:" + room.id, {"super":"cool"});
 			_.each(room.lights, function(lite){
 				hue.lights.toggle(lite.id);
 			});

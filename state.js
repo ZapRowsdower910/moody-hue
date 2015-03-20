@@ -215,6 +215,7 @@
       "colors": {
         "welcome": 25500,
         "pending": 12750,
+        "timesUp": 55500,
         "goodbye": 0,
         "unknown": 46920
       }
