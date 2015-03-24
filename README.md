@@ -13,7 +13,7 @@ Current plugins:
 - Weather - Old - may be broken currently. Use a light to give a visual forcast.
 
 
-To install application clone git repository or use 'sudo npm install moody-hues'. Modify the config.js file with the IP address where the rest end point should live. 
+To install application clone git repository or use 'sudo npm install moody-hues'. Modify the state.js file with the IP address where the rest end point should live. 
 
 For use with LogMeIn plugin it is recommended to also configure the correct latidute and longitude. Lat and Long is used to calculate daily sun events like sunrise and sunset. Default Lat and Long is for the Cleveland, Oh area.
 
