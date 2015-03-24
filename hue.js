@@ -37,13 +37,13 @@ log4js.configure({
   replaceConsole: true
 });
 
-var logger = log4js.getLogger("Main");
+var log = log4js.getLogger("Main");
 var configs;
 
 main = {
 	init : function(){
 		try{
-			logger.info("Starting up moody-hues");
+			log.info("Starting up moody-hues");
 
 			// Load config file, then bootstrap application
 			configManager.load().then(
@@ -79,70 +79,74 @@ main = {
 					main.times.watcher.start();
 				},
 				function(msg, err){
-					logger.error("Unable to start application", msg, err );
+					log.error("Unable to start application", msg, err );
 				}
 			);
 
 			
 		} catch(e){
-			logger.error("Error attempting to start app", e);
+			log.error("Error attempting to start app", e);
 		}
 	},
 	checkStatus : function(){
-		logger.info("Checking app authentication status of user ["+configs.general.apiName+"]..");
+		log.info("Checking app authentication status of user ["+configs.general.apiName+"]..");
 		
 		// Attempt to make an api call using the configured app name
-		var prms = hue.api.get("").then(function(resp){
+		hue.api.get("").then(function(resp){
 			var dfd = when.defer();
 
 			if(resp.lights){
-				logger.info("Successful api call made! We're is good to go");
+				log.info("Successful api call made! We're is good to go");
 				dfd.resolve();
+
 			} else {
-				logger.warn("Oh cheese and rice! Something isn't right..");
+				log.warn("Oh cheese and rice! Something isn't right..");
+
 				if(resp[0].error.type == 1){
-					logger.info("Application has not yet been authenticated with bridge - starting activaction flow");
+					log.info("Application has not yet been authenticated with bridge - starting activaction flow");
+
 					hue.api.registerUser().then(function(){
-						logger.info("API User all setup");
+						log.info("API User all setup");
 						dfd.resolve();
 					},
 					function(err){
 						dfd.reject("unable to complete app registration with the hue base server [",err,"]");
 					});
+
 				} else {
 					dfd.reject("Not sure what we have here [",rsp,"]");
 				}
 			}
 
 			return dfd.promise;
-		}, function(err){
-			logger.error("Error while attempting to check app status[",err,"]");
-		});
 
-		prms.then(
+		}, function(err){
+			log.error("Error while attempting to check app status[",err,"]");
+
+		}).then(
 			main.startPlugins, 
 			function(err){
-				logger.error(err);
+				log.error(err);
 			}
 		);
 	},
 	startPlugins : function(){
-		logger.info("Boot sequence completed. Starting up plugins");
+		log.info("Boot sequence completed. Starting up plugins");
 		try{
 			
 			pluginManager.init(configs);
 
 		} catch (e){
-			logger.error("Error while starting up plugins: ", e);
+			log.error("Error while starting up plugins: ", e);
 		}
 	},
 	times : {
 		refresh : function(){
 			var now = new Date();
 			now.setHours("12")
-			logger.info("Setting up times using lat [%s], long [%s] current date [%s]",configs.general.latitude, configs.general.longitude, now);
+			log.info("Setting up times using lat [%s], long [%s] current date [%s]",configs.general.latitude, configs.general.longitude, now);
 			session.state.times = sun.getTimes(now, configs.general.latitude, configs.general.longitude);
-			logger.debug("Time refresh complete. New times: ", session.state.times);
+			log.debug("Time refresh complete. New times: ", session.state.times);
 		},
 		watcher : {
 			start : function(){
@@ -156,11 +160,11 @@ main = {
 
 				session.state.times.rolloverTime = new moment.duration(24, "hours");
 
-				logger.info("Scheduling time refresh in ["+utils.converter.milliToHrs(timeToWait)+"] hrs");
+				log.info("Scheduling time refresh in ["+utils.converter.milliToHrs(timeToWait)+"] hrs");
 				session.state.timers.timeRefresh = setTimeout(function(){
 					// reset times
 					main.times.refresh();
-					logger.info("First day cycle completed, scheduling regular cycle");
+					log.info("First day cycle completed, scheduling regular cycle");
 					// make sure the timer var is cleared so we can reuse it
 					clearTimeout(session.state.timers.timeRefresh);
 					// setup an interval event to allow for refreshing every 24hrs
@@ -173,7 +177,7 @@ main = {
 				timeToWait);
 			},
 			stop : function(){
-				logger.info("Stopping suncalc time refresher")
+				log.info("Stopping suncalc time refresher")
 				clearTimeout(session.state.timers.timesRefresh);
 			}
 		}

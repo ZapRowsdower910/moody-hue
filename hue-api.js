@@ -2,7 +2,7 @@ var needle = require("needle"),
 	when = require("when"),
 	_ = require("underscore"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Hue-Api");
+	log = log4js.getLogger("Hue-Api");
 
 // local deps
 var configManager = require("./configManager"),
@@ -22,6 +22,7 @@ var api = {
 					if(_.isArray(rsp) && rsp[0].error){
 						utils.apiError(rsp[0]);
 						dfd.reject(rsp[0]);
+
 					} else {
 						dfd.resolve(rsp);
 					}
@@ -81,11 +82,12 @@ var api = {
 		return dfd.promise;
 	},
 	delete : function(){
-		logger.warn("delete has not been implemented yet");
+		log.warn("delete has not been implemented");
 	},
 	setup : function(){
 		var dfd = when.defer();
-		logger.debug("Requesting hue base server id from url [%s]", configs.hue.portalUrl);
+		log.debug("Requesting hue base server id from url [%s]", configs.hue.portalUrl);
+
 		needle.get(configs.hue.portalUrl, function(err, resp){
 			if(!err){
 				
@@ -94,7 +96,7 @@ var api = {
 				   (rsp[0].internalipaddress != undefined && rsp[0].internalipaddress != ""))
 				{
 					configs.hue.baseIp = rsp[0].internalipaddress;
-					logger.info("Found local server ["+configs.hue.baseIp+"]");
+					log.info("Found local server ["+configs.hue.baseIp+"]");
 					session.state.current.isScanningForBase = false;
 					session.state.current.isSetup = true;
 					
@@ -114,22 +116,27 @@ var api = {
 		if(!session.state.current.isSetup 
 			&& !session.state.current.isScanningForBase)
 		{
-			logger.info("Setting up hue API");
+			log.info("Setting up hue API");
 			session.state.current.scanningForBase = true;
 
 			if(configs.hue.baseIp && configs.hue.baseIp != ""){
-				logger.info("Attempting to use previous known base server id [%s]",configs.hue.baseIp);
+				log.info("Attempting to use previous known base server id [%s]",configs.hue.baseIp);
 
 				session.state.current.isScanningForBase = false;
 				session.state.current.isSetup = true;
+
 				return lights.state.get("").then(function(){
-					logger.info("Successful API message completed. Previous IP seems to be valid.");
+					log.info("Successful API message completed. Previous IP seems to be valid.");
+
 					return true;
-				}).catch(function(){
-					logger.warn("Test request failed. Pulling server info from public api..");
+
+				}).catch(function(e){
+					log.warn("Test request failed. Pulling server info from public api. Error:", e);
+
 					session.state.current.isScanningForBase = false;
 					session.state.current.isSetup = false;
 					return api.setup();
+
 				});
 			} else {
 				return api.setup();
@@ -147,23 +154,26 @@ var api = {
 				username : configs.general.apiName
 			};
 			
-			logger.info("Attempting to register user ["+configs.general.apiName+"] to Hue bridge");
+			log.info("Attempting to register user ["+configs.general.apiName+"] to Hue bridge");
 			needle.post(configs.hue.baseIp + "/api", data, {json : true}, function(err,resp){
 				if(!err){
-					// logger.info(resp);
+					
 					if(resp.body){
 						var rsp = resp.body;
-						// logger.info(rsp[0]);
+						
 						if(!rsp[0].error){
-							logger.info("New API user created successfully");
+							log.info("New API user created successfully");
 							dfd.resolve();
+
 						} else {
 							if(resp.body[0].error.type == 7){
 								dfd.reject("Check your apiName configuration - this fields needs to be between 10-40 characters long.");
+
 							} else if(resp.body[0].error.type == 101){
 								dfd.reject("Ok, you have 30 seconds to click the button on your bridge to authenticate this app before the request expires. If 30 seconds elapses, re-run the program to send another registration request.");
+
 							} else {
-								logger.error(resp.body[0]);
+								log.error(resp.body[0]);
 							}						
 						}
 					} else {
@@ -185,7 +195,7 @@ var lights = {
 	state : {
 		isOn : function(lightId){		
 			return api.get("/lights/" + lightId).then(function(rsp){
-				logger.debug("light ["+lightId+"] is currently [" + (rsp.state.on ? "on" : "off") + "]");
+				log.debug("light ["+lightId+"] is currently [" + (rsp.state.on ? "on" : "off") + "]");
 				return rsp.state.on;
 			});
 		},
@@ -217,15 +227,15 @@ var lights = {
 		}
 	},
 	turnOnDim : function(lightId){
-		logger.info("turning light [" +lightId+ "] on");
+		log.info("turning light [" +lightId+ "] on to dim setting");
 		return lights.state.change(lightId, {"on" : true, bri : 1, sat: 20});
 	},
 	turnOn : function(lightId){
-		logger.info("turning light [" +lightId+ "] on");
+		log.info("turning light [" +lightId+ "] on");
 		return lights.state.change(lightId, {"on" : true});
 	},
 	turnOff : function(lightId){
-		logger.info("turning light [" +lightId+ "] off");
+		log.info("turning light [" +lightId+ "] off");
 		return lights.state.change(lightId, {"on" : false});
 	},
 	toggle : function(lightId){
@@ -263,7 +273,7 @@ var lights = {
 		var dfd = when.defer();
 
 		lights.state.get(lightId).then(function(currentState){
-			logger.info("Blinking light ["+lightId+"]");
+			log.info("Blinking light ["+lightId+"]");
 			var blinkIterations = currentState.state.on ? 10 : 11,
 					limit = 0,
 					finalChange = {},
@@ -278,7 +288,7 @@ var lights = {
 						lights.state.change(lightId, change);
 					},
 					function(e){
-						logger.error("blink - isOn failed ["+e+"]");
+						log.error("blink - isOn failed ["+e+"]");
 					});
 
 					limit++;	
@@ -287,11 +297,11 @@ var lights = {
 					currentState.state.transitiontime = 10;
 					finalChange = hueUtils.filterHueStateObj(currentState.state);
 
-					logger.debug("reverting back to original state ["+JSON.stringify(finalChange)+"]");
+					log.debug("reverting back to original state ["+JSON.stringify(finalChange)+"]");
 
 					if(!finalChange.on){
 						delete finalChange.on;
-						logger.info("Removed on setting: ", finalChange);
+						log.info("Removed on setting: ", finalChange);
 					}
 
 					// If light was originally off, change the light back to its original
@@ -299,15 +309,15 @@ var lights = {
 					lights.state.change(lightId, finalChange).then(function(){
 						if(!finalChange.on){
 							lights.turnOff(lightId).then(function(){
-								logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state (off)");
+								log.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state (off)");
 							});
 						} else {
-							logger.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
+							log.info("Blinking cycle completed. Light [" + lightId + "] as been reverted back to its original state");
 						}
 						
 					},
 					function(e){
-						logger.error("blink - state change failed ["+JSON.stringify(e)+"]");
+						log.error("blink - state change failed ["+JSON.stringify(e)+"]");
 					});
 
 					dfd.resolve();
@@ -315,7 +325,7 @@ var lights = {
 
 			}, interval);
 		}, function(err){
-			logger.warn("Unable to get light ["+lightId+"] current settings to start blink phase.");
+			log.warn("Unable to get light ["+lightId+"] current settings to start blink phase.");
 			dfd.reject();
 		});
 
@@ -329,9 +339,9 @@ var groups = {
 	},
 	add : function(name,lights){
 		if(_.isArray(lights)){
-			logger.debug("attempting to create group ["+name+"]");
+			log.debug("attempting to create group ["+name+"]");
 			api.post("/groups", {"name" : name, "lights" : lights}, function(rsp){	
-				logger.info("Group was created successfully, updating groups light members");
+				log.info("Group was created successfully, updating groups light members");
 				
 				var group = _.find(configs.groups, function(v){
 					if(g.name == name){
@@ -342,12 +352,12 @@ var groups = {
 				groups.setMembers(group);
 			});
 		} else {
-			logger.error("an array of lights is needed to create a group");
+			log.error("an array of lights is needed to create a group");
 		}
 	},
 	state : {
 		get : function(id){
-			logger.debug("Getting group state id [" + id + "]");
+			log.debug("Getting group state id [" + id + "]");
 			return api.get("/groups/" + id);
 		},
 		change : function(id, data){
@@ -370,13 +380,13 @@ var utils = {
 		if(err.code == "EHOSTUNREACH" &&
 			configs.hue.baseIp != "")
 		{
-			logger.info("Host unreachable error detected - pulling hubs IP fresh incase hubs IPs addy changed.");
+			log.info("Host unreachable error detected - pulling hubs IP fresh incase hubs IPs addy changed.");
 			// Reset isSetup state
 			session.state.current.isSetup = false;
 			api.isSetup();	
 
 		} else if(err.code == "ECONNRESET"){
-			logger.error("Connection reset by hue base server");
+			log.error("Connection reset by hue base server");
 
 		} else {
 			// Error is most likely a hue error
@@ -386,39 +396,39 @@ var utils = {
 	},
 	apiError : function(err, details){
 		try{
-			logger.error("Api resulted in an error response [", err,"] Event data [", (details != undefined ? details : ""), "]" );
+			log.error("Api resulted in an error response [", err,"] Event data [", (details != undefined ? details : ""), "]" );
 		} catch (e){
-			logger.error("Error while attempting to be clever - hueApi.js - utils.apiError: ",e);
+			log.error("Error while attempting to be clever - hueApi.js - utils.apiError: ",e);
 		}
 		// General errors
 		if(err.type == 1){
-			logger.error("The app has not been authenticated yet - have you finished the registration process?");
+			log.error("The app has not been authenticated yet - have you finished the registration process?");
 		} else if(err.type == 2){
-			logger.error("Bad request T_T");
+			log.error("Bad request T_T");
 		} else if(err.type == 3){
-			logger.error("This device doesn't exist - using correct id?");
+			log.error("This device doesn't exist - using correct id?");
 		} else if(err.type == 4){
-			logger.error("That method type isn't valid for this rest path.");
+			log.error("That method type isn't valid for this rest path.");
 		} else if(err.type == 5){
-			logger.error("Request type expected a body that was not sent - using correct rest path?");
+			log.error("Request type expected a body that was not sent - using correct rest path?");
 		} else if(err.type == 6){
-			logger.error("Invalid request params included on the PUT request - check the Api.");
+			log.error("Invalid request params included on the PUT request - check the Api.");
 		} else if(err.type == 7){
-			logger.error("Paramter is out of range, or of incorrect type - check the API");
+			log.error("Paramter is out of range, or of incorrect type - check the API");
 		} else if(err.type == 8){
-			logger.error("Read only paramater - can't be edited T_T");
+			log.error("Read only paramater - can't be edited T_T");
 		} else if(err.type == 901){
-			logger.error("Great now you gone and broke the bridge! Bridge internal error T_T");
+			log.error("Great now you gone and broke the bridge! Bridge internal error T_T");
 			
 			// specific errors for ceratin message types
 		} else if(err.type == 101){
-			logger.error("Link button was not pressed in 30 seconds.");
+			log.error("Link button was not pressed in 30 seconds.");
 		} else if(err.type == 201){
-			logger.error("Paramter not modifiable - is the device on?");
+			log.error("Paramter not modifiable - is the device on?");
 		} else if(err.type == 301){
-			logger.error("Groups appear to be full, please remove one to before adding another.");
+			log.error("Groups appear to be full, please remove one to before adding another.");
 		} else if(err.type == 302){
-			logger.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
+			log.error("Device has been added to max allotted groups - remove it from a group before attempting to add it to another group");
 		}
 	},
 	processArrayResp : function(rsp,dfd){

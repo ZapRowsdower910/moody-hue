@@ -1,7 +1,7 @@
 {
   "server": {
     "port": 8080,
-    "ip_addr": "192.168.1.177"
+    "ip_addr": "192.168.168.240"
   },
   "general": {
     "apiName": "huey-moods",
@@ -163,16 +163,13 @@
     "end": 10,
     "watcherInterval": 30,
     "wakeup" :{
-      "hue":{
-        "start":0,
-        "end":25000
-      },
-      "sat":{
-        "start":255,
-        "end":45
-      },
-      "bri":150,
-      "speed" : 1.5
+      "pallete":[
+        {"hue":0, "bri":100},
+        {"hue":750, "bri":150},
+        {"hue":1500, "bri":200},
+        {"hue":2250, "bri":250}
+      ],
+      "riseTime" : 3
     }
   },
   "transitions": {

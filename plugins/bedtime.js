@@ -12,7 +12,7 @@ var _ = require("underscore"),
 	when = require("when"),
 	moment = require("moment"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Bedtime Plugin");
+	log = log4js.getLogger("Bedtime Plugin");
 
 // local deps
 // var server = require("../rest");
@@ -31,19 +31,19 @@ var methods = {
 					waitTime;
 
 			if(!now.isBefore(wakeupToday)){
-				logger.debug("Detected wakup time is tomorrow, adding a day to time");
+				log.debug("Detected wakup time is tomorrow, adding a day to time");
 				wakeupToday.add(1,"days");
 			}
 
 			waitTime = wakeupToday.diff(now);
 
-			logger.info("Starting bedtime watcher, will wakeup in ["+utils.converter.milliToHrs(waitTime)+"] hrs");
+			log.info("Starting bedtime watcher, will wakeup in ["+utils.converter.milliToHrs(waitTime)+"] hrs");
 			session.state.timers.bedtimeWatcher = setTimeout(
         methods.bedtimeWatcher.stop,
       waitTime);
 		},
 		stop : function(){
-			logger.info("Stopping bedtime watcher");
+			log.info("Stopping bedtime watcher");
 
 			_.each(session.state.rooms, function(room,i){
 				session.utils.unlock.byLevel(room.name, 8);
@@ -55,7 +55,7 @@ var methods = {
 			exceptions = [];
 		}
 
-		logger.debug("turning off lights, except for: ", exceptions);
+		log.debug("turning off lights, except for: ", exceptions);
 
 		return hue.lights.getAll().then(function(d){
 
@@ -102,7 +102,7 @@ var methods = {
 			return methods.sleepyTime(bedroom.lights);
 			
 		} else {
-			logger.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
+			log.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
 			return when.reject({
 				"error" : 100,
 				"errorDesc" : "Invalid room"
@@ -111,7 +111,9 @@ var methods = {
 	},
 	wakeup : function(){
 		var roomToFind = configs.bedtime.bedroom,
-				bedroom = utils.findRoom(roomToFind);
+				bedroom = utils.findRoom(roomToFind),
+				timePerStep = utils.converter.minToTransitionTime(configs.bedtime.wakeup.riseTime) / configs.bedtime.wakeup.pallete.length,
+				changeArray;
 
 		if(bedroom){
 
@@ -122,6 +124,26 @@ var methods = {
 			});
 
 			clearInterval(session.state.timers.bedtimeWatcher);
+
+			when.map(configs.bedetime.wakeup.pallete, function(step){
+				// Base change conf
+				var queueEntry = {},
+						change = {
+							"on":true,
+							"transitiontime": timePerStep
+						};
+
+				// Merge the step change to our base
+				_.extend(change, step);
+
+				queueEntry.change = change;
+				queueEntry.room = bedroom;
+
+				// Change time!
+				changeArray.push(queueEntry);
+			});
+
+			return utils.queueChanges(changeArray);
 
 			return when.map(bedroom.lights, function(lite){
 				return hue.lights.state.change(
@@ -148,11 +170,13 @@ var methods = {
 			});
 			
 		} else {
-			logger.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
+
+			log.error("Unable to find bedroom. Check configurations and make sure configs.bedtime.bedroom is a valid room");
 			return when.reject({
 				"error" : 100,
 				"errorDesc" : "Invalid room"
 			});
+
 		}
 	}
 };

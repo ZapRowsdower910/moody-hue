@@ -12,10 +12,9 @@
 
 var _ = require("underscore"),
 	when = require("when"),
-	delay = require("when/delay"),
 	log4js = require("log4js");
 
-var logger = log4js.getLogger("Transitions");
+var log = log4js.getLogger("Transitions");
 
 // local deps
 var session = require("../session"),
@@ -44,23 +43,23 @@ var methods = {
 				// if(session.utils.setRoomFx(room.name, mode, pubs.stop, null, pubs.configs.level)){
 					
 				// } else {
-				// 	logger.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);
+				// 	log.info("unable to change fx using room [%s] and mode [%s]", JSON.stringify(room), mode);
 				// 	return when.reject();
 				// }
 				
 			} else {
-				logger.debug("Invalid room ["+room+"] for transitions");
+				log.debug("Invalid room ["+room+"] for transitions");
 				return when.reject();
 			}
 
 		} catch(e){
-			logger.error("Error during transition cycle: ", e);
+			log.error("Error during transition cycle: ", e);
 			return when.reject();
 		}
 		
 	},
 	prepareChange : function(room){
-		logger.info("Starting transitions cycle for room [" + JSON.stringify(room) + "]");
+		log.info("Starting transitions cycle for room [" + JSON.stringify(room) + "]");
 
 		var set = [];
 
@@ -69,13 +68,13 @@ var methods = {
 				if(isOn == false){
 					var promise = hue.lights.turnOnDim(light.id);
 					promise.catch(function(e){
-						logger.error("turn on dim failed ["+JSON.stringify(e)+"]");
+						log.error("turn on dim failed ["+JSON.stringify(e)+"]");
 					});
 					return promise;
 				}
 			},
 			function(e){
-				logger.error("error finding if light ["+light.id+"] is on. err["+JSON.stringify(e)+"]");
+				log.error("error finding if light ["+light.id+"] is on. err["+JSON.stringify(e)+"]");
 			});
 
 			set.push(pms);
@@ -88,23 +87,25 @@ var methods = {
 	changeColor : function(room){
 		
 		_.each(room.lights, function(light){
-			var hueSet = session.state.current.transitions.hue;
-			var thisHue = utils.randomNumber(hueSet, (hueSet + configs.transitions.colorSlide));
+			var hueSet = session.state.current.transitions.hue,
+					thisHue = utils.randomNumber(hueSet, (hueSet + configs.transitions.colorSlide)),
+					bri = utils.randomNumber(configs.transitions.brightness.dim, configs.transitions.brightness.bright),
+					trans = utils.converter.minToTransitionTime(configs.transitions.transitionTime),
+					level = utils.getModeLevel(session.state.current.mode),
+					sat = 50;
+
 			// The hue value maxes out, if its greater than 65535 we want to wrap back to 0
 			if(thisHue > 65535){
 				thisHue = utils.randomNumber(0, configs.transitions.colorSlide);
 			}
+
 			// Update current color config
 			session.state.current.transitions.hue = thisHue;
 
 			if(configs.transitions.brightness.bright > 255){
 				configs.transitions.brightness.bright = 255;
 			}
-			var bri = utils.randomNumber(configs.transitions.brightness.dim, 
-				configs.transitions.brightness.bright);
 
-			var level = utils.getModeLevel(session.state.current.mode);
-			var sat = 50;
 			if(level == "light"){
 				sat = utils.randomNumber(configs.transitions.satLevels.light[0],
 					configs.transitions.satLevels.light[1]);
@@ -118,24 +119,27 @@ var methods = {
 				if(thisHue > 10000 && thisHue < 43000){
 					bri = utils.randomNumber(100, 175);
 				}
+
 				sat = utils.randomNumber(configs.transitions.satLevels.heavy[0],
 					configs.transitions.satLevels.heavy[1]);
+
 			} else {
 				sat = utils.randomNumber(configs.transitions.satLevels.mid[0],
 					configs.transitions.satLevels.mid[1]);
 			}
 			
-			var trans = utils.converter.minToTransitionTime(configs.transitions.transitionTime);
 			var change = {
 				"bri" : bri,
 				"sat" : sat,
 				"hue" : thisHue,
 				"transitiontime" : trans
 			};
-			logger.debug("Changing light ["+light.id+"] to ["+JSON.stringify(change)+"]");
+
+			log.debug("Changing light ["+light.id+"] to ["+JSON.stringify(change)+"]");
 			hue.lights.state.change(light.id, change).then(function(){
-				logger.info("Successfully changed light ["+light.id+"]");
+				log.info("Successfully changed light ["+light.id+"]");
 			});
+			
 		});
 	}
 };
@@ -161,7 +165,7 @@ server.put("/transitions/start/:str", function(req, res){
 				data = req.body;
 
 		if(data && data.room){
-			logger.info("request for /transitions/start received - transition mode ["+mode+"] room ["+data.room+"]");
+			log.info("request for /transitions/start received - transition mode ["+mode+"] room ["+data.room+"]");
 		
 			pubs.start(data.room, mode).then(function(){
 				res.send(200, {"error":0});
@@ -170,7 +174,7 @@ server.put("/transitions/start/:str", function(req, res){
 				utils.apiFailure("/transitions/start/:str", res, e);
 			});	
 		} else {
-			logger.info("Invalid room received [%s]", data);
+			log.info("Invalid room received [%s]", data);
 		}
 		
 	}catch(e){
@@ -190,7 +194,7 @@ server.put("/transitions/stop", function(req, res){
 				utils.apiFailure("/transitions/stop", res, e);
 			});	
 		} else {
-			logger.info("Invalid room received [%s]", data);
+			log.info("Invalid room received [%s]", data);
 		}
 		
 	}catch(e){
@@ -207,14 +211,14 @@ var pubs = {
 		level : 3
 	},
 	init : function(conf){
-		logger.info("Initializing transitions plugin");
+		log.info("Initializing transitions plugin");
 		configs = conf;
 		session.state.current.transitions = {};
 		session.state.current.transitions.hue = 0;
 	},
 	start : function(roomName, mode){
 		try{
-			logger.info("Attempting to start transitions on room ["+roomName+"] using mode ["+mode+"]");
+			log.info("Attempting to start transitions on room ["+roomName+"] using mode ["+mode+"]");
 			var room = utils.findRoom(roomName);
 
 			return session.utils.setRoomFx(room.name, "transitions", pubs.stop).then(function(){
@@ -228,12 +232,12 @@ var pubs = {
 					// run it once
 					return methods.cycle(room, mode);
 				} else {
-					logger.error("Tranisitions is already started or the room [%s] is invalid", JSON.stringify(room));
+					log.error("Tranisitions is already started or the room [%s] is invalid", JSON.stringify(room));
 					return when.resolve();
 				}
 			});
 		} catch(e){
-			logger.error("Error while attempting to start transitions ["+e+"]");
+			log.error("Error while attempting to start transitions ["+e+"]");
 			return when.reject();
 		}
 	},
@@ -241,7 +245,7 @@ var pubs = {
 		var room = utils.findRoom(roomName);
 
 		if(room){
-			logger.info("Stopping transitions");
+			log.info("Stopping transitions");
 			clearInterval(timers[room.name]);
 			timers[room.name] = undefined;
 			

@@ -5,7 +5,7 @@
 ****/
 var _ = require("underscore"),
 	log4js = require("log4js"),
-	logger = log4js.getLogger("Twinkle Plugin"),
+	log = log4js.getLogger("Twinkle Plugin"),
 	when = require("when");
 
 // local deps
@@ -39,7 +39,7 @@ var methods = {
 					// session.utils.lock.byLevel(room.name, pubs.configs.level);
 
 					lottery = methods.getRandomGroup(room.lights.length);
-					logger.info("Random group selected: ", lottery);
+					log.info("Random group selected: ", lottery);
 
 					_.each(room.lights, function(lite, i){
 						ids.push(lite.id);
@@ -66,9 +66,9 @@ var methods = {
 								change.sat = utils.randomNumber(180, 220);
 							}
 
-							logger.debug("Lite [%s] change: ", d.id, change);
+							log.debug("Lite [%s] change: ", d.id, change);
 							hue.lights.state.change(d.id, change).catch(function(err){
-								logger.info("Error while attempting to setup twinkle", err);
+								log.info("Error while attempting to setup twinkle", err);
 							});	
 						});
 						
@@ -76,11 +76,11 @@ var methods = {
 				// }
 				
 			} else {
-				logger.info("Unable to find room [%s]", JSON.stringify(room));
+				log.info("Unable to find room [%s]", JSON.stringify(room));
 			}
 
 		} catch(e){
-			logger.error("Error during twinkle cycle: ", e);
+			log.error("Error during twinkle cycle: ", e);
 		}
 		
 		// if we havent returned yet its an error case
@@ -91,7 +91,7 @@ var methods = {
 			have = 0,
 			group = [];
 
-		logger.debug("Randomly selecting [%s] from a group of [%s]", needed, lightCount);
+		log.debug("Randomly selecting [%s] from a group of [%s]", needed, lightCount);
 		while(have < needed){
 			var candidate = utils.randomNumber(0, lightCount);
 			if(group.indexOf(candidate) < 0){
@@ -111,17 +111,17 @@ server.put("/twinkle/start", function(req,res){
 		var data = req.body;
 
 		if(data && data.room){
-			logger.info("Request to start twinkle with room [%s]", data.room);
+			log.info("Request to start twinkle with room [%s]", data.room);
 
 			pubs.start(data.room).then(function(){
 				res.status(200).json({"error":0});
 
 			}).catch(function(e){
-				logger.info(arguments);
+				log.info(arguments);
 				utils.apiFailure("/twinkle/start", res, e);
 			});	
 		} else {
-			logger.info("Invalid room received [%s]", data);
+			log.info("Invalid room received [%s]", data);
 		}
 		
 	} catch(e){
@@ -135,7 +135,7 @@ server.put("/twinkle/stop", function(req,res){
 		var data = req.body;
 
 		if(data && data.room){
-			logger.info("Request to stop twinkle with room [%s]", data.room);
+			log.info("Request to stop twinkle with room [%s]", data.room);
 
 			pubs.stop(data.room).then(function(){
 				res.status(200).json({"error":0});
@@ -144,7 +144,7 @@ server.put("/twinkle/stop", function(req,res){
 				utils.apiFailure("/twinkle/stop", res, e);
 			});	
 		} else {
-			logger.info("Invalid room received [%s]", data);
+			log.info("Invalid room received [%s]", data);
 		}
 		
 	} catch(e){
@@ -174,7 +174,7 @@ var pubs = {
 	},
 	start : function(roomName){
 		try{
-			logger.info("Attempting to start twinkle to room ["+roomName+"]");
+			log.info("Attempting to start twinkle to room ["+roomName+"]");
 			var room = utils.findRoom(roomName);
 
 			return session.utils.setRoomFx(room.name, "twinkle", pubs.stop).then(function(){
@@ -184,21 +184,21 @@ var pubs = {
 					timers[roomName] = setInterval(function(){
 						methods.cycle(room.name)
 							.catch(function(e){
-								logger.warn("Twinkle cycle failed [%s]", JSON.stringify(e));
+								log.warn("Twinkle cycle failed [%s]", JSON.stringify(e));
 							});
 					},
 					utils.converter.minToMilli(configs.twinkle.cycleTime));
 					// run it once
 					return methods.cycle(room.name);
 				} else {
-					logger.error("Twinkle is already started or the room [%s] is invalid", JSON.stringify(room));
+					log.error("Twinkle is already started or the room [%s] is invalid", JSON.stringify(room));
 					return when.resolve();
 				}
 
 			});
 
 		} catch(e){
-			logger.error("Error while attempting to start twinkle ["+e+"]");
+			log.error("Error while attempting to start twinkle ["+e+"]");
 			return when.reject();
 		}
 
@@ -207,7 +207,7 @@ var pubs = {
 		var room = utils.findRoom(roomName);
 
 		if(room){
-			logger.info("Stopping twinkle");
+			log.info("Stopping twinkle");
 			clearInterval(timers[room.name]);
 			timers[room.name] = undefined;
 			
