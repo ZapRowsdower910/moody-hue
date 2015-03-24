@@ -143,31 +143,31 @@ var methods = {
 				changeArray.push(queueEntry);
 			});
 
-			return utils.queueChanges(changeArray);
+			return rooms.changeQueue(changeArray);
 
-			return when.map(bedroom.lights, function(lite){
-				return hue.lights.state.change(
-                lite.id,
-                {
-                	"on":true,
-                	"bri":1,
-                	"hue":configs.bedtime.wakeup.hue.start,
-                	"sat":configs.bedtime.wakeup.sat.start
-                });
-			}).then(function(){
-				return when.map(bedroom.lights, function(lite){
-					return hue.lights.state.change(
-					 		lite.id,
-					 		{
-					 			"bri":configs.bedtime.wakeup.bri,
-					 			"hue":configs.bedtime.wakeup.hue.end,
-					 			"sat":configs.bedtime.wakeup.sat.end,
-					 			"transitiontime": utils.converter.
-					 						minToTransitionTime(configs.bedtime.wakeup.speed)
-					 		}
-          );
-				});
-			});
+			// return when.map(bedroom.lights, function(lite){
+			// 	return hue.lights.state.change(
+   //              lite.id,
+   //              {
+   //              	"on":true,
+   //              	"bri":1,
+   //              	"hue":configs.bedtime.wakeup.hue.start,
+   //              	"sat":configs.bedtime.wakeup.sat.start
+   //              });
+			// }).then(function(){
+			// 	return when.map(bedroom.lights, function(lite){
+			// 		return hue.lights.state.change(
+			// 		 		lite.id,
+			// 		 		{
+			// 		 			"bri":configs.bedtime.wakeup.bri,
+			// 		 			"hue":configs.bedtime.wakeup.hue.end,
+			// 		 			"sat":configs.bedtime.wakeup.sat.end,
+			// 		 			"transitiontime": utils.converter.
+			// 		 						minToTransitionTime(configs.bedtime.wakeup.speed)
+			// 		 		}
+   //        );
+			// 	});
+			// });
 			
 		} else {
 
