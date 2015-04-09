@@ -1,3 +1,7 @@
+/**
+  Has ErrorNo's:
+    - 100 - 200
+**/
 var router = require("express").Router(),
     log = require("log4js").getLogger("ROUTE-BaseAPI");
 
