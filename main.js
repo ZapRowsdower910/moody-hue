@@ -27,7 +27,19 @@ configManager.init().then(function(conf){
 
 
 }).catch(function(e){
-  log.error("Unable to start up service!", e);
+
+  if(e.name == 'MongoError'){
+
+    if(e.message == 'connect ETIMEDOUT'){
+      log.error("Looks like a timeout occurred with mongo. This services is unable to start without mongo. Check your mongo settings in configs.json");
+    } else {
+      log.error("Unknow MongoError preventing service from starting!", e);
+    }
+
+  } else {
+    log.error("Unable to start up service!", e);  
+  }
+
   process.exit(1);
 });
   
