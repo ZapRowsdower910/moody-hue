@@ -72,7 +72,7 @@ router
 
   })
 
-  .put("/rooms/add/light", function(req, res){
+  .post("/rooms/add/light", function(req, res){
     var roomId = req.body.roomId,
         lightId = req.body.lightId,
         respObj = new ApiResponse();
@@ -124,4 +124,40 @@ router
       respObj.ErrorDesc = "Invalid roomId or lightId";
       res.status(500).json(respObj);
     }
+  })
+
+  .post("/rooms/:id", function(req, res){
+    var id = req.body.id,
+        respObj = new ApiResponse();
+
+    Room.findById(id, function(e, r){
+      if(e){
+        log.error("encountered exception while attempting to get room [%s] from mongo:", id,e);
+        res.status(500).json(respObj);
+      }
+
+      if(r){
+
+        var name = req.body.name;
+
+        r.name = name;
+
+        r.save(function(e){
+          if(e){
+            log.error("encountered exception while attempting to get room [%s] from mongo:", id,e);
+            res.status(500).json(respObj);
+          }
+
+          respObj.success(r);
+          res.json(respObj);  
+        })
+
+      } else {
+        respObj.ErrorNo = 303;
+        respObj.ErroDesc = "Unable to find room";
+        res.status(404).json(respObj);
+      }
+
+    })
+
   })
