@@ -86,14 +86,55 @@ router
 
   })
 
+  .put("/lights/:id", function(req, res){
+    var lightId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(lightId){
+      Light.findById(lightId, function(e, l){
+        if(e){
+          log.error("exception while attempting to find light to update - lightId [%s]", lightId, e);
+          res.status(500).json(respObj);
+        }
+
+        if(l){
+          log.debug("found light using lightId [%s]", lightId);
+
+          var name = req.body.name;
+
+          l.name = name;
+
+          l.save(function(e, updatedLight){
+             if(e){
+              log.error("exception while attempting to update light - lightId [%s]", lightId, e);
+              res.status(500).json(respObj);
+            }
+
+            respObj.success({});
+            res.json(respObj);
+          })
+
+          
+        } else {
+          respObj.ErrorNo = 353;
+          respObj.ErrorDesc = "Unable to find light";
+          res.status(404).json(respObj);
+        }
+      })
+    } else {
+      log.error("Invalid lightId [%s]", lightId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid lightId"
+      res.status(500).json(respObj);
+    }
+
+  })
+
   .delete("/lights/:id", function(req, res){
     var lightId = req.params.id;
         respObj = new ApiResponse();
 
     if(lightId){
-      lightUtils.removeLight(lightId).then(function(l){
-
-        log.info(l)
 
         if(l){
           
