@@ -4,9 +4,7 @@ var mongoose = require('mongoose'),
 var room = mongoose.Schema({
   id : String,
   name : String,
-  lights : [Light.schema]
+  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }]
 });
-
-console.log("+===================",Light)
 
 module.exports = mongoose.model("Room", room);
