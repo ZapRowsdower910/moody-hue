@@ -1,0 +1,9 @@
+body {
+  padding-top: 50px;
+}
+
+.room{
+	padding:1em;
+	border:1px solid black;
+	min-height:200px;
+}
