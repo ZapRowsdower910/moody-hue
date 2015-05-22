@@ -56,7 +56,7 @@ router
 
   .post("/rooms/add", function(req, res){
 
-    var name = req.body.name,
+    var name = req.body.name || false,
         room = new Room(),
         respObj = new ApiResponse();
 
@@ -82,7 +82,7 @@ router
   })
 
   .post("/rooms/:id", function(req, res){
-    var id = req.body.id,
+    var id = req.body.id || false,
         respObj = new ApiResponse();
 
     Room.findById(id, function(e, r){
@@ -173,6 +173,49 @@ router
     }
   })
 
+  .delete("/rooms/:id", function(req, res){
+    var roomId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(roomId){
+      roomUtils.delete(roomId).then(function(l){
+        if(l){
+          
+          // try to get all the remaining lights to return on the response.
+          // The getAll() call is a convenience call and not critical. 
+          // Its isn't important enough to cause a failure response
+          // if that call fails just return back an empty success.
+          roomUtils.getAll().then(function(rooms){
+            respObj.success(rooms);
+            res.json(respObj);
+
+          }).catch(function(e){
+            respObj.success({});
+            res.json(respObj);
+
+          });
+
+        } else {
+          respObj.ErrorNo = 303;
+          respObj.ErrorDesc = "Unable to find room";
+          res.status(404).json(respObj);
+        }
+
+      }).catch(function(e){
+        respObj.ErrorNo = 304;
+        respObj.ErrorDesc = "Failed to remove room";
+        res.status(500).json(respObj);  
+  
+      });
+
+    } else {
+      log.error("Invalid roomId [%s]", roomId);
+      respObj.ErrorNo = 302;
+      respObj.ErrorDesc = "Invalid roomId"
+      res.status(500).json(respObj);
+    }
+    
+  })
   
 
 log.info("Rooms api loaded");

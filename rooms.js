@@ -71,7 +71,32 @@ methods = {
 		} // TODO: do we need err handling?
 
 		return dfd.promise;
-	}
+	},
+	delete : function(roomId){
+    	var dfd = when.defer();
+
+    	Room.findOneAndRemove({_id:roomId}, function(e, l){
+	        if(e){
+	          log.error("exception while attempting to remove room roomId [%s]", roomId, e);
+	          dfd.reject(e);
+	        }
+
+	        if(l){
+	        	log.debug("deleted room using roomId [%s]", roomId);
+	        	// Publish a delete event
+	        	events.publish("rooms:remove", roomId);
+
+	        	dfd.resolve(l);
+
+	        } else {
+	        	log.error("failed to find and delete room using id [%s]", roomId);
+	        	dfd.reject();
+	        }
+
+      	});
+
+      	return dfd.promise;
+    }
 };
 
 // TODO: add a cleanup event that listens for a light being deleted

@@ -135,7 +135,7 @@ router
         respObj = new ApiResponse();
 
     if(lightId){
-
+      lightUtils.delete(lightId).then(function(l){
         if(l){
           
           // try to get all the remaining lights to return on the response.
@@ -147,10 +147,11 @@ router
             res.json(respObj);
 
           }).catch(function(e){
-              respObj.success({});
-              res.json(respObj);
+            respObj.success({});
+            res.json(respObj);
 
-            });
+          });
+
         } else {
           respObj.ErrorNo = 353;
           respObj.ErrorDesc = "Unable to find light";
@@ -161,7 +162,7 @@ router
         respObj.ErrorNo = 354;
         respObj.ErrorDesc = "Failed to remove light";
         res.status(500).json(respObj);  
-
+  
       });
 
     } else {
@@ -171,6 +172,7 @@ router
       res.status(500).json(respObj);
     }
 
+    return dfd.promise;
   })
 
 

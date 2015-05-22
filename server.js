@@ -3,7 +3,8 @@ var express = require('express'),
     // cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     // session = require('express-session');
-    log = require("log4js").getLogger("Server");
+    log4js = require("log4js"),
+    log = log4js.getLogger("Server");
 
 var app = express(),
     configManager = require("./configManager"),
@@ -14,9 +15,11 @@ var app = express(),
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(log4js.connectLogger(log, { level: log4js.levels.INFO }));
 
 // app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static("web/public"));
 // app.use(session({
 //     secret : "SHUUUUSH",
 //     saveUninitialized: true,
@@ -60,6 +63,9 @@ configManager.getGeneral().then(function(conf){
 })
 
 
+// app.get("/", function(req,res){
+//   res.send("")
+// });
 
 
 // // catch 404 and forward to error handler

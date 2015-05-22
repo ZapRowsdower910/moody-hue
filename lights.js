@@ -64,7 +64,7 @@ var Light = require("./models/Light"),
 
     	return dfd.promise;
     },
-    removeLight : function(lightId){
+    delete : function(lightId){
     	var dfd = when.defer();
 
     	Light.findOneAndRemove({_id:lightId}, function(e, l){
@@ -81,7 +81,7 @@ var Light = require("./models/Light"),
 	        	dfd.resolve(l);
 
 	        } else {
-	        	log.error("failed to delete light using id [%s]", lightId);
+	        	log.error("failed to find and delete light using id [%s]", lightId);
 	        	dfd.reject();
 	        }
 

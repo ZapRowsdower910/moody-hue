@@ -22,7 +22,8 @@ configManager.init().then(function(conf){
   server = require("./server");
   // load apis
   require("./web/routes/roomsApi");
-  require("./web/routes/lightsApi")
+  require("./web/routes/lightsApi");
+  require("./web/routes/ColorApi");
 
 
 
