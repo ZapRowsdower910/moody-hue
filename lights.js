@@ -1,94 +1,96 @@
 var when = require("when"),
-	log = require("log4js").getLogger("Lights");
+	log = require("log4js").getLogger("LightsDa");
 
-var Light = require("./models/Light"),
+var da = require("./da"),
+	Light = require("./models/Light"),
 	events = require("./eventHelper");
 
- var methods = {
-    getById : function(lightId){
-    	var dfd = when.defer();
+var lightDa = new da(":light", Light);
+//  var methods = {
+//     getById : function(lightId){
+//     	var dfd = when.defer();
 
-    	Light.findById(lightId, function(e, l){
-	        if(e){
-          		log.error("exception while attempting to find light lightId [%s]", lightId, e);
-	          	dfd.reject(e);
-	        }
+//     	Light.findById(lightId, function(e, l){
+// 	        if(e){
+//           		log.error("exception while attempting to find light lightId [%s]", lightId, e);
+// 	          	dfd.reject(e);
+// 	        }
 
-	        if(l){
-	          	log.debug("Found light [%s] using lightId [%s]", l, lightId);
+// 	        if(l){
+// 	          	log.debug("Found light [%s] using lightId [%s]", l, lightId);
 
-	          	dfd.resolve(l);
-	        } else {
-	        	log.error("No lights found using id [%s]", lightId);
-    			dfd.reject("No found lights");
-	        }
-      	});
+// 	          	dfd.resolve(l);
+// 	        } else {
+// 	        	log.error("No lights found using id [%s]", lightId);
+//     			dfd.reject("No found lights");
+// 	        }
+//       	});
 
-    	return dfd.promise;
-    },
-    getAll : function(){
-      var dfd = when.defer();
+//     	return dfd.promise;
+//     },
+//     getAll : function(){
+//       var dfd = when.defer();
 
-      Light.find(function(e, lights){
+//       Light.find(function(e, lights){
 
-        if(e){
-          log.error("Exception during get all lights:",e);
-          dfd.reject(e);
-        }
+//         if(e){
+//           log.error("Exception during get all lights:",e);
+//           dfd.reject(e);
+//         }
 
-        log.info("Found [%s] lights", lights.length, lights);
+//         log.info("Found [%s] lights", lights.length, lights);
 
-        dfd.resolve(lights);
-      });
+//         dfd.resolve(lights);
+//       });
 
-      return dfd.promise;
-    },
-    save : function(light){
-    	var dfd = when.defer();
+//       return dfd.promise;
+//     },
+//     save : function(light){
+//     	var dfd = when.defer();
 
-    	light.save(function(e, l){
-		 	if(e){
-	          log.error("error while attempting to save light:",light,e);
-	          dfd.reject(e);
-	        }
+//     	light.save(function(e, l){
+// 		 	if(e){
+// 	          log.error("error while attempting to save light:",light,e);
+// 	          dfd.reject(e);
+// 	        }
 
-    		if(l){
-    			log.debug("Light [%s] saved successfully", light._id);
-    			dfd.resolve(l);
-    		} else {
-    			log.error("Failed to save light [%s]", light._id);
-    			dfd.reject();
-    		}
+//     		if(l){
+//     			log.debug("Light [%s] saved successfully", light._id);
+//     			dfd.resolve(l);
+//     		} else {
+//     			log.error("Failed to save light [%s]", light._id);
+//     			dfd.reject();
+//     		}
 
-    	});
+//     	});
 
-    	return dfd.promise;
-    },
-    delete : function(lightId){
-    	var dfd = when.defer();
+//     	return dfd.promise;
+//     },
+//     delete : function(lightId){
+//     	var dfd = when.defer();
 
-    	Light.findOneAndRemove({_id:lightId}, function(e, l){
-	        if(e){
-	          log.error("exception while attempting to remove light lightId [%s]", lightId, e);
-	          dfd.reject(e);
-	        }
+//     	Light.findOneAndRemove({_id:lightId}, function(e, l){
+// 	        if(e){
+// 	          log.error("exception while attempting to remove light lightId [%s]", lightId, e);
+// 	          dfd.reject(e);
+// 	        }
 
-	        if(l){
-	        	log.debug("deleted light using lightId [%s]", lightId);
-	        	// Publish a delete event
-	        	events.publish("lights:remove", lightId);
+// 	        if(l){
+// 	        	log.debug("deleted light using lightId [%s]", lightId);
+// 	        	// Publish a delete event
+// 	        	events.publish("lights:remove", lightId);
 
-	        	dfd.resolve(l);
+// 	        	dfd.resolve(l);
 
-	        } else {
-	        	log.error("failed to find and delete light using id [%s]", lightId);
-	        	dfd.reject();
-	        }
+// 	        } else {
+// 	        	log.error("failed to find and delete light using id [%s]", lightId);
+// 	        	dfd.reject();
+// 	        }
 
-      	});
+//       	});
 
-      	return dfd.promise;
-    }
-};
+//       	return dfd.promise;
+//     }
+// };
 
-module.exports = methods;
+module.exports = lightDa;
