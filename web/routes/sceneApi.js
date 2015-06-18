@@ -7,10 +7,39 @@ var when = require("when"),
 var router = require("./baseApi");
 
 var Scene = require("../../models/Scene"),
+		Light = require("../../models/Light"),
+		State = require("../../models/State"),
 	ApiResponse = require("../../objects/ApiResponse"),
 	sceneUtils = require("../../scenes");
 
 router
+
+	.get("/scenes/:id", function(req, res){
+    var sceneId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(sceneId){
+
+      sceneUtils.getById(sceneId).then(function(scene){
+          respObj.success(scene);
+          res.json(respObj);
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find scene";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid sceneId [%s]", sceneId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid sceneId"
+      res.status(500).json(respObj);
+    }
+
+  })
+
 	.get("/scenes", function(req, res){
 		respObj = new ApiResponse();
 
@@ -25,18 +54,20 @@ router
 
 	.post("/scenes/add", function(req, res){
 		var name = req.body.name,
-			rooms = req.body.rooms,
-			groups = req.body.groups,
+			lights = req.body.lights,
 			state = req.body.state,
 			respObj = new ApiResponse(),
 			scene;
 
 		log.info(req.body);
 
-		log.info("name [%s] room [%o] group [%o] state [%o]", name, rooms, groups, state)
+		log.info("name [%s] lights [%o] state [%o]", name, lights, state)
 
 		// We can have either a room or a group as the scene target
-		if(name && state && (rooms || groups)){
+		if(name && state && lights){
+
+			req.body.state = utils.validateReference(state, State)
+			// req.body.lights = utils.validateReference(lights, Light)
 
 			// TODO: obv not the safest methodology. Decide if i care
 			scene = new Scene(req.body);
@@ -47,7 +78,7 @@ router
         		res.json(respObj);
 
 			}).catch(function(e){
-				res.status(500).json(respObj);	
+				res.status(500).json(respObj);
 			});
 
 		} else {
@@ -103,6 +134,23 @@ router
 	    }
 
 	  })
+
+
+var utils = {
+	validateReference: function(reqObj, daObj){
+		console.log("_id" in reqObj);
+
+		if(reqObj._id == undefined){
+			log.info("replacing request object w/ da obj");
+			var newDaObj = new daObj(reqObj);
+			return newDaObj
+		}else {
+			log.info("id in obj", reqObj._id);
+		}
+
+		return reqObj;
+	}
+}
 
 
 log.info("Scenes api loaded");

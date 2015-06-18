@@ -1,10 +1,9 @@
 var mongoose = require('mongoose');
 
-var lite = mongoose.Schema({
+var scene = mongoose.Schema({
   name : String,
-  rooms : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Room' }],
-  groups : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' }],
+  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }],
   state : { type: mongoose.Schema.Types.ObjectId, ref: 'State' }
 });
 
-module.exports = mongoose.model("Scene", lite);
+module.exports = mongoose.model("Scene", scene);

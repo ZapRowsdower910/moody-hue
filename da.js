@@ -50,11 +50,11 @@ da.prototype = {
 		var query = scope.modelObject.find()
 		if(this.related && this.related.length){
 			_.each(this.related, function(r){
-				query.populate(r);
+				// query.populate(r);
 			});
 		}
 	    query.exec(function(e, rtnObj){
-
+	    	
 			if(e){
 				log.error("encountered exception while attempting to get all [%s] from mongo:",scope.name, e);
 				dfd.reject(e);
@@ -120,6 +120,24 @@ da.prototype = {
       	return dfd.promise;
     }
 };
+
+var utils = {
+	populateRelated: function(obj, query){
+		console.log(obj)
+		// if(obj){
+			if(obj.related && obj.related.length){
+				_.each(obj.related, function(r){
+					console.log(r)
+					query.populate(r.name);
+					utils.populateRelated(r, query);
+				});
+			} 
+
+			
+		// }
+		
+	}
+}
 
 // TODO: add a cleanup event that listens for a light being deleted
 // (thru an event listener) then removes the lightId from any scene

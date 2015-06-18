@@ -11,6 +11,32 @@ var State = require("../../models/State"),
 	stateUtils = require("../../states");
 
 router
+	.get("/states/:id", function(req, res){
+    var stateId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(stateId){
+
+      stateUtils.getById(stateId).then(function(state){
+          respObj.success(state);
+          res.json(respObj);
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find state";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid stateId [%s]", stateId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid stateId"
+      res.status(500).json(respObj);
+    }
+
+  })
+  
 	.get("/states", function(req, res){
 		respObj = new ApiResponse();
 

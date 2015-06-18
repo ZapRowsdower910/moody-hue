@@ -6,6 +6,6 @@ var da = require("./da"),
 	sceneDa = new da("scene", Scene),
 	events = require("./eventHelper");
 
-var scenesDa = new da("scene", Scene, ["rooms", "states"]);
+var scenesDa = new da("scene", Scene, ["lights", "state"]);
 
 module.exports = scenesDa;
