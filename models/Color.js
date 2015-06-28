@@ -1,10 +1,15 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose'),
+    da = require("./da");;
 
-var color = mongoose.Schema({
-  name : String,
-  r : { type: Number, min: 0, max: 255 },
-  g : { type: Number, min: 0, max: 255 },
-  b : { type: Number, min: 0, max: 255 }
-});
+var colorSchema = mongoose.Schema({
+      name : String,
+      r : { type: Number, min: 0, max: 255 },
+      g : { type: Number, min: 0, max: 255 },
+      b : { type: Number, min: 0, max: 255 }
+    }),
+    colorObj = mongoose.model("Color", colorSchema);
+    colorDa = new da("color", colorObj);
 
-module.exports = mongoose.model("Color", color);
+colorObj.methods = colorDa;
+
+module.exports = colorObj;

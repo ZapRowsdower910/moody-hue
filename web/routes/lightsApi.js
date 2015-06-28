@@ -7,10 +7,9 @@ var when = require("when"),
 
 var router = require("./baseApi");
 
-var Light = require("../../models/Light");
+var Lights = require("../../models/Light");
     Room = require("../../models/Room"),
     ApiResponse = require("../../objects/ApiResponse"),
-    lightUtils = require("../../lights"),
     events = require("../../eventHelper");
 
 
@@ -25,7 +24,7 @@ router
 
     var respObj = new ApiResponse();
 
-    lightUtils.getAll().then(function(lights){
+    Lights.methods.getAll().then(function(lights){
       respObj.success(lights);
       res.json(respObj);
 
@@ -41,7 +40,7 @@ router
 
     if(lightId){
 
-      lightUtils.getById(lightId).then(function(light){
+      Lights.methods.getById(lightId).then(function(light){
           respObj.success(light);
           res.json(respObj);
 
@@ -62,14 +61,14 @@ router
   })
 
   .post("/lights/add", function(req, res){
-    var light = new Light(),
+    var light = new Lights(),
         respObj = new ApiResponse();
 
     if(req.body && req.body.name){
 
       light.name = req.body.name;
 
-      lightUtils.save(light).then(function(l){
+      Lights.methods.save(light).then(function(l){
         respObj.success(l);
         res.json(respObj);
 
@@ -91,7 +90,7 @@ router
         respObj = new ApiResponse();
 
     if(lightId){
-      Light.findById(lightId, function(e, l){
+      Lights.findById(lightId, function(e, l){
         if(e){
           log.error("exception while attempting to find light to update - lightId [%s]", lightId, e);
           res.status(500).json(respObj);
@@ -135,14 +134,14 @@ router
         respObj = new ApiResponse();
 
     if(lightId){
-      lightUtils.delete(lightId).then(function(l){
+      Lights.methods.delete(lightId).then(function(l){
         if(l){
           
           // try to get all the remaining lights to return on the response.
           // The getAll() call is a convenience call and not critical. 
           // Its isn't important enough to cause a failure response
           // if that call fails just return back an empty success.
-          lightUtils.getAll().then(function(lights){
+          Lights.methods.getAll().then(function(lights){
             respObj.success(lights);
             res.json(respObj);
 

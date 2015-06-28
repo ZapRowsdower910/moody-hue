@@ -6,11 +6,10 @@ var when = require("when"),
 
 var router = require("./baseApi");
 
-var Scene = require("../../models/Scene"),
+var Scenes = require("../../models/Scene"),
 		Light = require("../../models/Light"),
 		State = require("../../models/State"),
-	ApiResponse = require("../../objects/ApiResponse"),
-	sceneUtils = require("../../scenes");
+		ApiResponse = require("../../objects/ApiResponse");
 
 router
 
@@ -20,7 +19,7 @@ router
 
     if(sceneId){
 
-      sceneUtils.getById(sceneId).then(function(scene){
+      Scenes.methods.getById(sceneId).then(function(scene){
           respObj.success(scene);
           res.json(respObj);
 
@@ -43,7 +42,7 @@ router
 	.get("/scenes", function(req, res){
 		respObj = new ApiResponse();
 
-		sceneUtils.getAll().then(function(scenes){
+		Scenes.methods.getAll().then(function(scenes){
 			respObj.success(scenes);
     		res.json(respObj);
 
@@ -73,7 +72,7 @@ router
 			scene = new Scene(req.body);
 			log.info("Created new scene [%o]", scene);
 
-			sceneUtils.save(scene).then(function(c){
+			Scenes.methods.save(scene).then(function(c){
 				respObj.success(c);
         		res.json(respObj);
 
@@ -96,14 +95,14 @@ router
 	        respObj = new ApiResponse();
 
 	    if(sceneId){
-	      sceneUtils.delete(sceneId).then(function(c){
+	      Scenes.methods.delete(sceneId).then(function(c){
 	        if(c){
 	          
 	          // try to get all the remaining scenes to return on the response.
 	          // The getAll() call is a convenience call and not critical. 
 	          // Its isn't important enough to cause a failure response
 	          // if that call fails just return back an empty success.
-	          sceneUtils.getAll().then(function(scenes){
+	          Scenes.methods.getAll().then(function(scenes){
 	            respObj.success(scenes);
 	            res.json(respObj);
 
@@ -138,7 +137,15 @@ router
 
 var utils = {
 	validateReference: function(reqObj, daObj){
-		console.log("_id" in reqObj);
+		typeof reqObj == 'object' ? console.log("_id" in reqObj) : console.log(reqObj);
+
+		// TODO: Consider if more validation should be done here - Currently an invalid
+		// id will get added successfully.
+		
+		// if its a string assume its an id
+		if(typeof reqObj == 'string'){
+			return reqObj;
+		}
 
 		if(reqObj._id == undefined){
 			log.info("replacing request object w/ da obj");

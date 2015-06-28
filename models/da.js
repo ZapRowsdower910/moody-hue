@@ -50,7 +50,7 @@ da.prototype = {
 		var query = scope.modelObject.find()
 		if(this.related && this.related.length){
 			_.each(this.related, function(r){
-				// query.populate(r);
+				query.populate(r);
 			});
 		}
 	    query.exec(function(e, rtnObj){
@@ -76,19 +76,19 @@ da.prototype = {
 		if(reqObj){
 
 			reqObj.save(function(e, obj){
-	            if(e){
-	              log.error("error while attempting to save a [%s]:", scope.name, e);
-	              dfd.reject(e);
-	            }
+        if(e){
+          log.error("error while attempting to save a [%s]:", scope.name, e);
+          dfd.reject(e);
+        }
 
-	            console.log(obj);
+        console.log(obj);
 
-	            if(obj){
-	            	dfd.resolve(obj);
-	            } else {
-	            	dfd.reject();
-	            }
-	        });
+        if(obj){
+        	dfd.resolve(obj);
+        } else {
+        	dfd.reject();
+        }
+	    });
 		} // TODO: do we need err handling?
 
 		return dfd.promise;
@@ -98,26 +98,26 @@ da.prototype = {
     		scope = this;
 
     	scope.modelObject.findOneAndRemove({_id:id}, function(e, l){
-	        if(e){
-	          log.error("exception while attempting to remove scene %s Id [%s]", scope.name, id, e);
-	          dfd.reject(e);
-	        }
+        if(e){
+          log.error("exception while attempting to remove scene %s Id [%s]", scope.name, id, e);
+          dfd.reject(e);
+        }
 
-	        if(l){
-	        	log.debug("deleted scene using %s Id [%s]", scope.name, id);
-	        	// Publish a delete event
-	        	events.publish("scenes:remove", id);
+        if(l){
+        	log.debug("deleted scene using %s Id [%s]", scope.name, id);
+        	// Publish a delete event
+        	events.publish("scenes:remove", id);
 
-	        	dfd.resolve(l);
+        	dfd.resolve(l);
 
-	        } else {
-	        	log.error("failed to find and delete %s using id [%s]", scope.name, id);
-	        	dfd.reject();
-	        }
+        } else {
+        	log.error("failed to find and delete %s using id [%s]", scope.name, id);
+        	dfd.reject();
+        }
 
-      	});
+    	});
 
-      	return dfd.promise;
+    	return dfd.promise;
     }
 };
 

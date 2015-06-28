@@ -7,18 +7,15 @@ var log = require("log4js").getLogger("Rooms-Api");
 
 var router = require("./baseApi");
 
-var Room = require("../../models/Room"),
+var Rooms = require("../../models/Room"),
     Light = require("../../models/Light"),
-    ApiResponse = require("../../objects/ApiResponse"),
-    roomUtils = require("../../rooms");
-
-log.warn(roomUtils);
+    ApiResponse = require("../../objects/ApiResponse");
 
 router
   .get("/rooms", function(req, res){
     var respObj = new ApiResponse();
 
-    roomUtils.getAll().then(function(rooms){
+    Rooms.methods.getAll().then(function(rooms){
       respObj.success(rooms);
       res.json(respObj);
 
@@ -34,7 +31,7 @@ router
         roomId = req.params.id;
 
     if(roomId){
-      roomUtils.getById(roomId).then(function(room){
+      Rooms.methods.getById(roomId).then(function(room){
         respObj.success(room);
         res.json(respObj);
 
@@ -63,7 +60,7 @@ router
     if(name){
       room.name = name;
 
-      roomUtils.save(room).then(function(){
+      Rooms.methods.save(room).then(function(){
         respObj.success(room);
         res.json(respObj);
 
@@ -126,7 +123,7 @@ router
 
       log.info("Searching for roomId [%s]", roomId);
 
-      roomUtils.getById(roomId).then(function(room){
+      Rooms.methods.getById(roomId).then(function(room){
         if(room){
           log.info("Room found, now searching for lightId [%s]", lightId);
 
@@ -137,7 +134,7 @@ router
 
             room.lights.push(light);
 
-            roomUtils.save(room).then(function(){
+            Rooms.methods.save(room).then(function(){
               log.info("Light added to rooom successfully!");
               respObj.success(room);
               res.json(respObj);
@@ -178,14 +175,14 @@ router
         respObj = new ApiResponse();
 
     if(roomId){
-      roomUtils.delete(roomId).then(function(l){
+      Rooms.methods.delete(roomId).then(function(l){
         if(l){
           
           // try to get all the remaining lights to return on the response.
           // The getAll() call is a convenience call and not critical. 
           // Its isn't important enough to cause a failure response
           // if that call fails just return back an empty success.
-          roomUtils.getAll().then(function(rooms){
+          Rooms.methods.getAll().then(function(rooms){
             respObj.success(rooms);
             res.json(respObj);
 

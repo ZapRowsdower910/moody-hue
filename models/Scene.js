@@ -1,9 +1,14 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose'),
+    da = require("./da");
 
-var scene = mongoose.Schema({
-  name : String,
-  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }],
-  state : { type: mongoose.Schema.Types.ObjectId, ref: 'State' }
-});
+var sceneSchema = mongoose.Schema({
+      name : String,
+      lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }],
+      state : { type: mongoose.Schema.Types.ObjectId, ref: 'State' }
+    }),
+    sceneObj = mongoose.model("Scene", sceneSchema);
+    sceneDa = new da("scene", sceneObj, ["lights", "state", "color"]);
 
-module.exports = mongoose.model("Scene", scene);
+sceneObj.methods = sceneDa;
+
+module.exports = sceneObj;

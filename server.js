@@ -11,6 +11,7 @@ var app = express(),
     baseApiRoute = require("./web/routes/baseApi"),
     generalConfigs;
 
+// Use template engine swig
 
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({ extended: true }));

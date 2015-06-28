@@ -1,10 +1,16 @@
 var mongoose = require('mongoose'),
-    Light = require('../models/Light');
+    Light = require('../models/Light'),
+    da = require("./da");
 
-var room = mongoose.Schema({
-  id : String,
-  name : String,
-  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }]
-});
+var roomScema = mongoose.Schema({
+      id : String,
+      name : String,
+      lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }]
+    }),
+    roomObj = mongoose.model("Room", roomScema),
+    roomDa = new da("room", roomObj, ["lights"]);
 
-module.exports = mongoose.model("Room", room);
+roomObj.methods = roomDa;
+
+module.exports = roomObj
+

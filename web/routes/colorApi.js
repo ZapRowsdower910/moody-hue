@@ -6,15 +6,14 @@ var when = require("when"),
 
 var router = require("./baseApi");
 
-var Color = require("../../models/Color"),
-	ApiResponse = require("../../objects/ApiResponse"),
-	colorUtils = require("../../colors");
+var Colors = require("../../models/Color"),
+	ApiResponse = require("../../objects/ApiResponse");
 
 router
 	.get("/colors", function(req, res){
 		respObj = new ApiResponse();
 
-		colorUtils.getAll().then(function(colors){
+		Colors.methods.getAll().then(function(colors){
 			respObj.success(colors);
     		res.json(respObj);
 
@@ -38,7 +37,7 @@ router
 			color = new Color(req.body);
 			log.info("Created new color [%o]", color);
 
-			colorUtils.save(color).then(function(c){
+			Colors.methods.save(color).then(function(c){
 				respObj.success(c);
         		res.json(respObj);
 
@@ -61,14 +60,14 @@ router
 	        respObj = new ApiResponse();
 
 	    if(colorId){
-	      colorUtils.delete(colorId).then(function(c){
+	      Colors.methods.delete(colorId).then(function(c){
 	        if(c){
 	          
 	          // try to get all the remaining colors to return on the response.
 	          // The getAll() call is a convenience call and not critical. 
 	          // Its isn't important enough to cause a failure response
 	          // if that call fails just return back an empty success.
-	          colorUtils.getAll().then(function(colors){
+	          Colors.methods.getAll().then(function(colors){
 	            respObj.success(colors);
 	            res.json(respObj);
 

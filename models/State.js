@@ -1,10 +1,15 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose'),
+    da = require("./da");
 
-var lite = mongoose.Schema({
-  name : String,
-  transition : {type: Number, min : 0},
-  bri: {type: Number, min : 0, max: 255},
-  color : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Color' }]
-});
+var stateSchema = mongoose.Schema({
+      name : String,
+      transition : {type: Number, min : 0},
+      bri: {type: Number, min : 0, max: 255},
+      color : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Color' }]
+    }),
+    stateObj = mongoose.model("State", stateSchema);
+    stateDa = new da("state", stateObj, ["color"]);
 
-module.exports = mongoose.model("State", lite);
+stateObj.methods = stateDa;
+
+module.exports = stateObj;

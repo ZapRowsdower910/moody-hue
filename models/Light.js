@@ -1,8 +1,13 @@
-var mongoose = require('mongoose');
+var mongoose = require('mongoose'),
+    da = require("./da");
 
-var lite = mongoose.Schema({
-  name : String,
-  type : String
-});
+var liteSchema = mongoose.Schema({
+      name : String,
+      type : String
+    }),
+    lightObj = mongoose.model("Light", liteSchema),
+    lightDa = new da("light", lightObj);
 
-module.exports = mongoose.model("Light", lite);
+lightObj.methods = lightDa;
+
+module.exports = lightObj;

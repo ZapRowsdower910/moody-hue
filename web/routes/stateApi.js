@@ -6,9 +6,8 @@ var when = require("when"),
 
 var router = require("./baseApi");
 
-var State = require("../../models/State"),
-	ApiResponse = require("../../objects/ApiResponse"),
-	stateUtils = require("../../states");
+var States = require("../../models/State"),
+	  ApiResponse = require("../../objects/ApiResponse");
 
 router
 	.get("/states/:id", function(req, res){
@@ -17,7 +16,7 @@ router
 
     if(stateId){
 
-      stateUtils.getById(stateId).then(function(state){
+      States.methods.getById(stateId).then(function(state){
           respObj.success(state);
           res.json(respObj);
 
@@ -40,7 +39,7 @@ router
 	.get("/states", function(req, res){
 		respObj = new ApiResponse();
 
-		stateUtils.getAll().then(function(states){
+		States.methods.getAll().then(function(states){
 			respObj.success(states);
     		res.json(respObj);
 
@@ -68,7 +67,7 @@ router
 			state = new State(req.body);
 			log.info("Created new state [%o]", state);
 
-			stateUtils.save(state).then(function(c){
+			States.methods.save(state).then(function(c){
 				respObj.success(c);
         		res.json(respObj);
 
@@ -91,14 +90,14 @@ router
 	        respObj = new ApiResponse();
 
 	    if(stateId){
-	      stateUtils.delete(stateId).then(function(c){
+	      States.methods.delete(stateId).then(function(c){
 	        if(c){
 	          
 	          // try to get all the remaining states to return on the response.
 	          // The getAll() call is a convenience call and not critical. 
 	          // Its isn't important enough to cause a failure response
 	          // if that call fails just return back an empty success.
-	          stateUtils.getAll().then(function(states){
+	          States.methods.getAll().then(function(states){
 	            respObj.success(states);
 	            res.json(respObj);
 
