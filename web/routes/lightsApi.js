@@ -2,16 +2,35 @@
   Has ErrorNo's 351 - 400
 **/
 
-var when = require("when"),
+var _ = require("underscore"),
+    when = require("when"),
     log = require("log4js").getLogger("Lights-Api");
 
 var router = require("./baseApi");
 
-var Lights = require("../../models/Light");
+var Lights = require("../../models/Light"),
+    LightDa = require("../../models/Light").da,
     Room = require("../../models/Room"),
     ApiResponse = require("../../objects/ApiResponse"),
     events = require("../../eventHelper");
 
+var test = new Lights({
+  name: "Living room 1",
+  type: "hue",
+  apiId: "1"
+})
+
+console.log(LightDa);
+
+// console.log(test)
+// // console.log(_.functions(test))
+// console.log("turnOn" in test);
+
+// test.isOn().then(function(){
+//   log.info("light is on")
+// }, function(){
+//   log.info("light is off")
+// })
 
 events.subscribe("lights:remove", function(e){
   log.info("Heard lights:remove:", e);
@@ -24,7 +43,7 @@ router
 
     var respObj = new ApiResponse();
 
-    Lights.methods.getAll().then(function(lights){
+    LightDa.getAll().then(function(lights){
       respObj.success(lights);
       res.json(respObj);
 

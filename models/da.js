@@ -15,7 +15,7 @@ var da = function(name, obj, relatedObjects){
 	this.related = relatedObjects;
 };
 
-da.prototype = {
+var methods = {
 	getById: function(id){
 		var dfd = when.defer(),
 			scope = this;
@@ -46,7 +46,7 @@ da.prototype = {
 	getAll: function(){
 		var dfd = when.defer(),
 			scope = this;
-
+console.log("da this:", this);
 		var query = scope.modelObject.find()
 		if(this.related && this.related.length){
 			_.each(this.related, function(r){
@@ -121,6 +121,8 @@ da.prototype = {
     }
 };
 
+da.prototype = methods;
+
 var utils = {
 	populateRelated: function(obj, query){
 		console.log(obj)
@@ -145,3 +147,4 @@ var utils = {
 // orphaned in the lights[].
 
 module.exports = da;
+module.exports.methods = methods;

@@ -14,10 +14,16 @@ log4js.configure({
 log = log4js.getLogger("Main");
 log.info("Logger initialized");
 
+// TODO: the init call is async so I need to wire up a promise for this
+// i should most likely call configManager and pluginManager inits in parrell
+// and wait for both to finish before setting up server + api routes
+// load plugins
+require("./pluginManager").init();
+
 
 configManager.init().then(function(conf){
   log.debug("General configs have been found:", conf);
-
+  
   // Startup the express server
   server = require("./server");
   // load apis
