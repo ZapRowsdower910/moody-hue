@@ -14,5 +14,3 @@ From git:
 * optional - Configure the server ip / port
 * Start the service: 'node main'
 * profit
-
-To start the application: node hue.js
