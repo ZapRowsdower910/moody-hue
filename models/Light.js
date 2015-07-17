@@ -1,7 +1,8 @@
-var _ = require("underscore"),
+var _ = require("lodash"),
     when = require("when"),
     mongoose = require('mongoose'),
-    da = require("./da").methods,
+    staticDa = require("./da").statics,
+    instanceDa = require("./da").instance,
     plugins = require("../pluginManager").plugins.handlers.lights;
 
 var liteSchema = mongoose.Schema({
@@ -33,23 +34,11 @@ var locals = {
       }
     }
 
-var merged = _.extend({}, da, locals);
+var mergedInstance = _.assign({}, instanceDa, locals);
 
-log.info("Merged:", merged)
+liteSchema.methods = mergedInstance;
+liteSchema.statics = staticDa;
 
-liteSchema.methods = merged;
-// lightObj.virtuals = v;
-// lightObj.methods.isOn = v.isOn;
-
-// liteSchema.methods = locals;
-
-// plugins["hue"].get("/lights/").then(function(l){
-//   _.each(l, function(){
-
-//   })
-// });
-
- lightObj = mongoose.model("Light", liteSchema),
+lightObj = mongoose.model("Light", liteSchema),
 
 module.exports = lightObj;
-module.exports.da = da;

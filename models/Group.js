@@ -1,9 +1,29 @@
-var mongoose = require('mongoose');
+var _ = require("lodash"),
+		mongoose = require('mongoose'),
+    staticDa = require("./da").statics,
+    instanceDa = require("./da").instance;
 
-var room = mongoose.Schema({
-  id : String,
-  name : String,
-  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }]
-});
+var groupSchema = mongoose.Schema({
+	  id : String,
+	  name : String,
+	  lights : [{ type: mongoose.Schema.Types.ObjectId, ref: 'Light' }]
+	}),
+	groupObj;
 
-module.exports = mongoose.model("Group", room);
+// Local instance methods
+var locals = {
+
+};
+
+// Merge generic DA w/ local instance methods
+var mergedInstance = _.assign({}, instanceDa, locals);
+
+// Add instance methods    
+groupSchema.methods = mergedInstance;
+// Add Static methods
+groupSchema.statics = staticDa;
+
+// Create Schema
+groupObj = mongoose.model("Group", groupSchema);
+
+module.exports = groupObj;

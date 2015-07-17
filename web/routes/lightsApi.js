@@ -9,7 +9,7 @@ var _ = require("underscore"),
 var router = require("./baseApi");
 
 var Lights = require("../../models/Light"),
-    LightDa = require("../../models/Light").da,
+    LightDa = require("../../models/Light"),
     Room = require("../../models/Room"),
     ApiResponse = require("../../objects/ApiResponse"),
     events = require("../../eventHelper");
@@ -43,7 +43,7 @@ router
 
     var respObj = new ApiResponse();
 
-    LightDa.getAll().then(function(lights){
+    Lights.getAll().then(function(lights){
       respObj.success(lights);
       res.json(respObj);
 
@@ -59,7 +59,7 @@ router
 
     if(lightId){
 
-      Lights.methods.getById(lightId).then(function(light){
+      Lights.getById(lightId).then(function(light){
           respObj.success(light);
           res.json(respObj);
 
@@ -87,11 +87,15 @@ router
 
       light.name = req.body.name;
 
-      Lights.methods.save(light).then(function(l){
+      var light = new Lights(req.body);
+      console.log(light.save)
+
+      light.saveMe().then(function(l){
         respObj.success(l);
         res.json(respObj);
 
       }).catch(function(e){
+        log.error(e);
         res.status(500).json(respObj);
       })
 
@@ -109,28 +113,38 @@ router
         respObj = new ApiResponse();
 
     if(lightId){
-      Lights.findById(lightId, function(e, l){
+      Lights.findById(lightId, function(e, light){
         if(e){
           log.error("exception while attempting to find light to update - lightId [%s]", lightId, e);
           res.status(500).json(respObj);
         }
 
-        if(l){
+        if(light){
           log.debug("found light using lightId [%s]", lightId);
 
           var name = req.body.name;
 
-          l.name = name;
+          console.log(light, name)
+          light.name = name;
+          console.log(light)
 
-          l.save(function(e, updatedLight){
-             if(e){
-              log.error("exception while attempting to update light - lightId [%s]", lightId, e);
-              res.status(500).json(respObj);
-            }
-
-            respObj.success({});
+          light.saveMe().then(function(l){
+            respObj.success(l);
             res.json(respObj);
+
+          }).catch(function(e){
+            log.error(e);
+            res.status(500).json(respObj);
           })
+          // (function(e, updatedLight){
+          //    if(e){
+          //     log.error("exception while attempting to update light - lightId [%s]", lightId, e);
+          //     res.status(500).json(respObj);
+          //   }
+
+          //   respObj.success({});
+          //   res.json(respObj);
+          // })
 
           
         } else {
@@ -153,14 +167,14 @@ router
         respObj = new ApiResponse();
 
     if(lightId){
-      Lights.methods.delete(lightId).then(function(l){
+      Lights.delete(lightId).then(function(l){
         if(l){
           
           // try to get all the remaining lights to return on the response.
           // The getAll() call is a convenience call and not critical. 
           // Its isn't important enough to cause a failure response
           // if that call fails just return back an empty success.
-          Lights.methods.getAll().then(function(lights){
+          Lights.getAll().then(function(lights){
             respObj.success(lights);
             res.json(respObj);
 
@@ -190,7 +204,6 @@ router
       res.status(500).json(respObj);
     }
 
-    return dfd.promise;
   })
 
 

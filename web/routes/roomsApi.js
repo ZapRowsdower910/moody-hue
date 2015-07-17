@@ -15,7 +15,7 @@ router
   .get("/rooms", function(req, res){
     var respObj = new ApiResponse();
 
-    Rooms.methods.getAll().then(function(rooms){
+    Rooms.getAll().then(function(rooms){
       respObj.success(rooms);
       res.json(respObj);
 
@@ -31,7 +31,7 @@ router
         roomId = req.params.id;
 
     if(roomId){
-      Rooms.methods.getById(roomId).then(function(room){
+      Rooms.getById(roomId).then(function(room){
         respObj.success(room);
         res.json(respObj);
 
@@ -54,14 +54,14 @@ router
   .post("/rooms/add", function(req, res){
 
     var name = req.body.name || false,
-        room = new Room(),
-        respObj = new ApiResponse();
+        respObj = new ApiResponse(),
+        room;
 
     if(name){
-      room.name = name;
+      room = new Rooms(req.body);
 
-      Rooms.methods.save(room).then(function(){
-        respObj.success(room);
+      room.saveMe(room).then(function(r){
+        respObj.success(r);
         res.json(respObj);
 
       }).catch(function(e){
@@ -123,7 +123,7 @@ router
 
       log.info("Searching for roomId [%s]", roomId);
 
-      Rooms.methods.getById(roomId).then(function(room){
+      Rooms.getById(roomId).then(function(room){
         if(room){
           log.info("Room found, now searching for lightId [%s]", lightId);
 
@@ -134,7 +134,7 @@ router
 
             room.lights.push(light);
 
-            Rooms.methods.save(room).then(function(){
+            Rooms.save(room).then(function(){
               log.info("Light added to rooom successfully!");
               respObj.success(room);
               res.json(respObj);
@@ -175,14 +175,14 @@ router
         respObj = new ApiResponse();
 
     if(roomId){
-      Rooms.methods.delete(roomId).then(function(l){
+      Rooms.delete(roomId).then(function(l){
         if(l){
           
           // try to get all the remaining lights to return on the response.
           // The getAll() call is a convenience call and not critical. 
           // Its isn't important enough to cause a failure response
           // if that call fails just return back an empty success.
-          Rooms.methods.getAll().then(function(rooms){
+          Rooms.getAll().then(function(rooms){
             respObj.success(rooms);
             res.json(respObj);
 
