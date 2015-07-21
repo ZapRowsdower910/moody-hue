@@ -16,7 +16,7 @@ router
 
     if(stateId){
 
-      States.methods.getById(stateId).then(function(state){
+      States.getById(stateId).then(function(state){
           respObj.success(state);
           res.json(respObj);
 
@@ -39,7 +39,7 @@ router
 	.get("/states", function(req, res){
 		respObj = new ApiResponse();
 
-		States.methods.getAll().then(function(states){
+		States.getAll().then(function(states){
 			respObj.success(states);
     		res.json(respObj);
 
@@ -64,10 +64,10 @@ router
 		if(name && transition && bri && color){
 
 			// TODO: obv not the safest methodology. Decide if i care
-			state = new State(req.body);
+			state = new States(req.body);
 			log.info("Created new state [%o]", state);
 
-			States.methods.save(state).then(function(c){
+			state.saveMe(state).then(function(c){
 				respObj.success(c);
         		res.json(respObj);
 
@@ -90,14 +90,14 @@ router
 	        respObj = new ApiResponse();
 
 	    if(stateId){
-	      States.methods.delete(stateId).then(function(c){
+	      States.delete(stateId).then(function(c){
 	        if(c){
 	          
 	          // try to get all the remaining states to return on the response.
 	          // The getAll() call is a convenience call and not critical. 
 	          // Its isn't important enough to cause a failure response
 	          // if that call fails just return back an empty success.
-	          States.methods.getAll().then(function(states){
+	          States.getAll().then(function(states){
 	            respObj.success(states);
 	            res.json(respObj);
 

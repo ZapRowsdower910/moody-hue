@@ -19,7 +19,7 @@ router
 
     if(sceneId){
 
-      Scenes.methods.getById(sceneId).then(function(scene){
+      Scenes.getById(sceneId).then(function(scene){
           respObj.success(scene);
           res.json(respObj);
 
@@ -42,7 +42,7 @@ router
 	.get("/scenes", function(req, res){
 		respObj = new ApiResponse();
 
-		Scenes.methods.getAll().then(function(scenes){
+		Scenes.getAll().then(function(scenes){
 			respObj.success(scenes);
     		res.json(respObj);
 
@@ -69,10 +69,10 @@ router
 			// req.body.lights = utils.validateReference(lights, Light)
 
 			// TODO: obv not the safest methodology. Decide if i care
-			scene = new Scene(req.body);
+			scene = new Scenes(req.body);
 			log.info("Created new scene [%o]", scene);
 
-			Scenes.methods.save(scene).then(function(c){
+			scene.saveMe(scene).then(function(c){
 				respObj.success(c);
         		res.json(respObj);
 
@@ -95,14 +95,14 @@ router
 	        respObj = new ApiResponse();
 
 	    if(sceneId){
-	      Scenes.methods.delete(sceneId).then(function(c){
+	      Scenes.delete(sceneId).then(function(c){
 	        if(c){
 	          
 	          // try to get all the remaining scenes to return on the response.
 	          // The getAll() call is a convenience call and not critical. 
 	          // Its isn't important enough to cause a failure response
 	          // if that call fails just return back an empty success.
-	          Scenes.methods.getAll().then(function(scenes){
+	          Scenes.getAll().then(function(scenes){
 	            respObj.success(scenes);
 	            res.json(respObj);
 
