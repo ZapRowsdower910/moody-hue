@@ -14,25 +14,35 @@ var liteSchema = mongoose.Schema({
     // lightDa = new da("light");
 
 var locals = {
-      turnOn: function(){
-        console.log(this);
-        plugins["hue"].set({ on: true });
-      },
-      isOn : function(){
-        console.log("this:", this)
+  getType: function(type){
 
-        return plugins["hue"].get("/lights/1").then(function(details){
-
-          if(details.state.on){
-            log.debug("Light is on")
-            return when.resolve();
-          } else{
-            log.debug("Light is off")
-            return when.reject();
-          }
-        })
-      }
+    if(plugins[type]){
+      return plugins[type];
+    } else {
+      log.debug("unable to map the type of [%s] to any installed plugin", type);
+      throw Exception("Type not found");
     }
+  },
+  turnOn: function(){
+    return locals.getType(this.type).set(this.apiId, {"on": true });
+  },
+  turnOff: function(){
+    return locals.getType(this.type).set(this.apiId, {"on": false });
+  },
+  isOn : function(){
+
+    return locals.getType(this.type).get(this.apiId).then(function(details){
+
+      if(details.state.on){
+        log.debug("Light is on")
+        return when.resolve();
+      } else{
+        log.debug("Light is off")
+        return when.reject();
+      }
+    });
+  }
+}
 
 var mergedInstance = _.assign({}, instanceDa, locals);
 

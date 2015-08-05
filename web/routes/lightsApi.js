@@ -2,7 +2,7 @@
   Has ErrorNo's 351 - 400
 **/
 
-var _ = require("underscore"),
+var _ = require("lodash"),
     when = require("when"),
     log = require("log4js").getLogger("Lights-Api");
 
@@ -20,7 +20,7 @@ var test = new Lights({
   apiId: "1"
 })
 
-console.log(LightDa);
+// console.log(LightDa);
 
 // console.log(test)
 // // console.log(_.functions(test))
@@ -38,6 +38,130 @@ events.subscribe("lights:remove", function(e){
 })
 
 router
+
+  .put("/lights/turnOn/:id", function(req, res){
+    var lightId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(lightId){
+
+      log.debug("Looking for lightid [%s]", lightId);
+      Lights.getById(lightId).then(function(light){
+          log.debug("Found light, turning it off");
+          light.turnOn().then(function(r){
+            respObj.success(r);
+            res.json(respObj);
+          }).catch(function(e){
+            log.error(e);
+
+            respObj.ErrorNo = 500;      // TODO: pick a real err no someday
+            respObj.ErrorDesc = "Failed to turn on light";
+            res.status(404).json(respObj);    
+          });
+          
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find light";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid lightId [%s]", lightId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid lightId"
+      res.status(500).json(respObj);
+    }
+
+
+  })
+
+.put("/lights/turnOff/:id", function(req, res){
+    var lightId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(lightId){
+
+      log.debug("Looking for lightid [%s]", lightId);
+      Lights.getById(lightId).then(function(light){
+          log.debug("Found light, turning it off");
+          light.turnOff().then(function(r){
+            respObj.success(r);
+            res.json(respObj);
+          }).catch(function(e){
+            log.error(e);
+
+            respObj.ErrorNo = 500;      // TODO: pick a real err no someday
+            respObj.ErrorDesc = "Failed to turn off light";
+            res.status(404).json(respObj);    
+          });
+          
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find light";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid lightId [%s]", lightId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid lightId"
+      res.status(500).json(respObj);
+    }
+
+
+  })
+
+  .get("/lights/isOn/:id", function(req, res){
+    var lightId = req.params.id;
+        respObj = new ApiResponse();
+
+    if(lightId){
+
+      log.debug("Looking for lightId [%s]", lightId);
+      Lights.getById(lightId).then(function(light){
+          log.debug("Found light, checkin' state");
+          light.isOn().then(function(r){
+              respObj.success({"isOn":true});
+              res.json(respObj);
+
+            }, function(){
+              respObj.success({"isOn":false});
+              res.json(respObj);
+            }
+          ).catch(function(e){
+            log.error(e);
+
+            respObj.ErrorNo = 500;      // TODO: pick a real err no someday
+            respObj.ErrorDesc = "Failed to turn on light";
+            res.status(404).json(respObj);    
+          });
+          
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find light";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid lightId [%s]", lightId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid lightId"
+      res.status(500).json(respObj);
+    }
+
+
+  })
+
+/***
+ Normal Crud Methods
+
+***/
   
   .get("/lights", function(req, res){
 
@@ -80,15 +204,12 @@ router
   })
 
   .post("/lights/add", function(req, res){
-    var light = new Lights(),
-        respObj = new ApiResponse();
+    var respObj = new ApiResponse(),
+        light;
 
     if(req.body && req.body.name){
 
-      light.name = req.body.name;
-
-      var light = new Lights(req.body);
-      console.log(light.save)
+      light = new Lights(req.body);
 
       light.saveMe().then(function(l){
         respObj.success(l);
@@ -100,17 +221,18 @@ router
       })
 
     } else {
-        respObj.ErrorNo = 351;
-        respObj.ErrorDesc = "Invalid request body or light name";
-        res.status(500).json(respObj);
-      }
+      respObj.ErrorNo = 351;
+      respObj.ErrorDesc = "Invalid request body or light name";
+      res.status(500).json(respObj);
+    }
     
 
   })
 
   .put("/lights/:id", function(req, res){
-    var lightId = req.params.id;
-        respObj = new ApiResponse();
+    var lightId = req.params.id,
+        respObj = new ApiResponse(),
+        updatedLight;
 
     if(lightId){
       Lights.findById(lightId, function(e, light){
@@ -122,10 +244,14 @@ router
         if(light){
           log.debug("found light using lightId [%s]", lightId);
 
-          var name = req.body.name;
+          // var name = req.body.name;
 
-          console.log(light, name)
-          light.name = name;
+          updatedLight = new Lights(req.body);
+          // updatedLight._id = light._id;
+
+          console.log(updatedLight)
+          console.log(light)
+_.assign(light, _.omit(updatedLight, "_id", "__v"));
           console.log(light)
 
           light.saveMe().then(function(l){

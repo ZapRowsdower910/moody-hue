@@ -21,6 +21,8 @@ http = {
   get : function(path){
     var dfd = when.defer();
 
+    log.debug("Sending a GET request to hue base server [%s] using endpoint [%s]", configs.hue.baseIp, path);
+
     // when(api.isSetup()).then(function(){
       needle.get(configs.hue.baseIp + "/api/" + configs.general.apiName + path, function(err, resp){
         if(!err){
@@ -53,6 +55,8 @@ http = {
   },
   put : function(path,data){
     var dfd = when.defer();
+console.log(data)
+    log.debug("Sending a PUT request to hue base server [%s] using endpoint [%s]", configs.hue.baseIp, path);
     
     // when(api.isSetup()).then(function(){
       needle.put(configs.hue.baseIp + "/api/" + configs.general.apiName + path, data, {json : true}, function(err, resp){
@@ -80,12 +84,14 @@ var methods = {
 
     log.debug("Loaded Hue Api plugin");
   },
-  get: function(path){
+  get: function(lightId, path){
+    log.info("gettin' stuff", lightId, path)
     // TODO: normalize resp
-    return http.get(path);
+    return http.get("/lights/" + lightId);
   },
-  set: function(){
-    log.info("set call");
+  set: function(lightId, change){
+    // TODO: Normalize resp
+    return http.put("/lights/" + lightId + "/state", change);
   }
 }
 

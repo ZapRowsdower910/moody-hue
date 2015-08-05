@@ -53,10 +53,10 @@ router
 
 	.post("/scenes/add", function(req, res){
 		var name = req.body.name,
-			lights = req.body.lights,
-			state = req.body.state,
-			respObj = new ApiResponse(),
-			scene;
+				lights = req.body.lights,
+				state = req.body.state,
+				respObj = new ApiResponse(),
+				scene;
 
 		log.info(req.body);
 
