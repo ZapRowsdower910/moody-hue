@@ -11,8 +11,8 @@ var liteSchema = mongoose.Schema({
       apiId : String
     }),
     lightObj;
-    // lightDa = new da("light");
 
+// Local instance methods
 var locals = {
   getType: function(type){
 
@@ -41,14 +41,27 @@ var locals = {
         return when.reject();
       }
     });
-  }
-}
+  },
+  setState: function(state){
+console.log(this);
+    return locals.getType(this.type).set(this.apiId, state).then(function(r){
+      log.info("Result of setState [%o]", r);
 
+      return r;
+    });
+
+  }
+};
+
+// Merge generic DA w/ local instance methods
 var mergedInstance = _.assign({}, instanceDa, locals);
 
+// Add instance methods
 liteSchema.methods = mergedInstance;
+// Add Static methods
 liteSchema.statics = staticDa;
 
+// Create Schema
 lightObj = mongoose.model("Light", liteSchema),
 
 module.exports = lightObj;

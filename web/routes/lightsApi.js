@@ -9,7 +9,7 @@ var _ = require("lodash"),
 var router = require("./baseApi");
 
 var Lights = require("../../models/Light"),
-    LightDa = require("../../models/Light"),
+    State = require("../../models/State"),
     Room = require("../../models/Room"),
     ApiResponse = require("../../objects/ApiResponse"),
     events = require("../../eventHelper");
@@ -20,18 +20,7 @@ var test = new Lights({
   apiId: "1"
 })
 
-// console.log(LightDa);
-
-// console.log(test)
-// // console.log(_.functions(test))
-// console.log("turnOn" in test);
-
-// test.isOn().then(function(){
-//   log.info("light is on")
-// }, function(){
-//   log.info("light is off")
-// })
-
+// Event tests to determine possible usefullness in plugins
 events.subscribe("lights:remove", function(e){
   log.info("Heard lights:remove:", e);
 
@@ -51,6 +40,7 @@ router
           light.turnOn().then(function(r){
             respObj.success(r);
             res.json(respObj);
+
           }).catch(function(e){
             log.error(e);
 
@@ -137,6 +127,69 @@ router
 
             respObj.ErrorNo = 500;      // TODO: pick a real err no someday
             respObj.ErrorDesc = "Failed to turn on light";
+            res.status(404).json(respObj);    
+          });
+          
+
+      }).catch(function(e){
+        respObj.ErrorNo = 353;
+        respObj.ErrorDesc = "Unable to find light";
+        res.status(404).json(respObj);
+
+      });
+
+    } else {
+      log.error("Invalid lightId [%s]", lightId);
+      respObj.ErrorNo = 352;
+      respObj.ErrorDesc = "Invalid lightId"
+      res.status(500).json(respObj);
+    }
+
+
+  })
+
+.put("/lights/state/:id", function(req, res){
+    // TODO: add support to send a state Obj too
+    var lightId = req.params.id,
+        stateId = req.body.stateId,
+        respObj = new ApiResponse();
+
+    if(!stateId){
+      log.error("Invalid stateId [%s]", stateId);
+      // TODO: Checkout what the correct error no is from
+      // stateApi router
+      respObj.ErrorNo = 360;
+      respObj.ErrorDesc = "Invalid sceneId"
+      res.status(500).json(respObj);
+    }
+
+    if(lightId){
+
+      log.debug("Looking for lightid [%s]", lightId);
+      Lights.getById(lightId).then(function(light){
+          log.debug("Found light, lookin' for state, stateId: ", stateId);
+
+          State.getById(stateId).then(function(state){
+            log.debug("Found state [%o]", state);
+
+            light.setState(state).then(function(r){
+              respObj.success(r);
+              res.json(respObj);
+              
+            }).catch(function(e){
+              log.error(e);
+
+              // TODO: review error no / desc dets
+              respObj.ErrorNo = 500;      // TODO: pick a real err no someday
+              respObj.ErrorDesc = "Failed to change state of light";
+              res.status(500).json(respObj);    
+            });
+
+          }).catch(function(e){
+            log.error(e);
+
+            respObj.ErrorNo = 500;      // TODO: pick a real err no someday
+            respObj.ErrorDesc = "Failed to find state";
             res.status(404).json(respObj);    
           });
           

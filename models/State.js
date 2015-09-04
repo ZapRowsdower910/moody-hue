@@ -16,10 +16,12 @@ var locals = {
 
 };
 
+staticDa.related = "color";
+
 // Merge generic DA w/ local instance methods
 var mergedInstance = _.assign({}, instanceDa, locals);
 
-// Add instance methods    
+// Add instance methods
 stateSchema.methods = mergedInstance;
 // Add Static methods
 stateSchema.statics = staticDa;
