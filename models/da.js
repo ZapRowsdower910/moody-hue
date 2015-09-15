@@ -46,11 +46,9 @@ var staticMethods = {
 				scope = this;
 
 		var query = this.find()
-		// if(this.related && this.related.length){
-		// 	_.each(this.related, function(r){
-		// 		query.populate(r);
-		// 	});
-		// }
+		if(this.related && this.related.length){
+      query.populate(this.related);
+    }
     query.exec(function(e, rtnObj){
 	    	
 			if(e){

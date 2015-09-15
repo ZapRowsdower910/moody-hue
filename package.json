@@ -32,6 +32,7 @@
   "homepage": "https://github.com/shortRound1911/moody-hue",
   "license": "ISC",
   "devDependencies": {
-    "lodash": "^3.10.0"
+    "lodash": "^3.10.0",
+    "swig": "^1.4.2"
   }
 }

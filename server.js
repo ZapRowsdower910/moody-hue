@@ -3,6 +3,7 @@ var express = require('express'),
     // cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     // session = require('express-session');
+    swig = require("swig"),
     log4js = require("log4js"),
     log = log4js.getLogger("Server");
 
@@ -12,15 +13,19 @@ var app = express(),
     generalConfigs;
 
 // Use template engine swig
+app.engine('html', swig.renderFile);
+app.set('view engine', 'html');
+app.set('views', __dirname + "/web/public");
 
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(log4js.connectLogger(log, { level: log4js.levels.INFO }));
+app.use(log4js.connectLogger(log, { level: log4js.levels.debug }));
 
 // app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static("web/public"));
+// app.use(express.static(path.join(__dirname, '/web/public/includes')));
+app.use("/includes", express.static("./web/public/includes"));
+
 // app.use(session({
 //     secret : "SHUUUUSH",
 //     saveUninitialized: true,
@@ -64,9 +69,9 @@ configManager.getGeneral().then(function(conf){
 })
 
 
-// app.get("/", function(req,res){
-//   res.send("")
-// });
+app.get("/", function(req,res){
+  res.render('index', { title: "monkey who?", body: "bananas"})
+});
 
 
 // // catch 404 and forward to error handler

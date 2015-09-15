@@ -15,6 +15,8 @@ var locals = {
 
 };
 
+staticDa.related = "light state color";
+
 // Merge generic DA w/ local instance methods
 var mergedInstance = _.assign({}, instanceDa, locals);
 

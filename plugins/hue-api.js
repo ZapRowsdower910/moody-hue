@@ -1,4 +1,4 @@
-var _ = require("underscore"),
+var _ = require("lodash"),
     needle = require("needle"),
     when = require("when"),
     hueUtils = require("./hue/utils"),
